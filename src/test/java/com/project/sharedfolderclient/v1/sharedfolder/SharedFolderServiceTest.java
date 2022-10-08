@@ -74,6 +74,40 @@ class SharedFolderServiceTest {
 
 
     @Nested
+    class Edit {
+        @Nested
+        class Rename {
+            @Test
+            @DisplayName("Success: rename file")
+            void successRenameFile() throws IOException, InterruptedException {
+                caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-rename-file");
+                String currentFileName = caseObject.getPreRequest().get("data").get(0).get("name").asText();
+                HttpResponse<String> createResponse =  TestUtils.createHttpResponse(caseObject.getPreRequest());
+                Mockito.doReturn(createResponse).when(httpClient).send(
+                        RestUtils.createGetRequest(serverUtil.getApiPath()),
+                        HttpResponse.BodyHandlers.ofString());
+                SharedFile updatedFile = JSON.objectMapper.convertValue(caseObject.getRequest(), new TypeReference<>() {
+                });
+                JsonNode expectedResultAsJson = caseObject.getResponse();
+                JsonNode data = expectedResultAsJson.get("data");
+                SharedFile expectedResult = JSON.objectMapper.convertValue(data, new TypeReference<>() {
+                });
+                HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
+                Mockito.doReturn(response).when(httpClient).send(
+                        RestUtils.createPutRequest(serverUtil.getApiPath() + updatedFile.getId(), updatedFile),
+                        HttpResponse.BodyHandlers.ofString());
+                sharedFolderService.list();
+
+                SharedFile actualResult = sharedFolderService.rename(currentFileName, updatedFile.getName());
+
+                assertNotNull(actualResult, "expect to have a file");
+                assertEquals(expectedResult, actualResult
+                        , () -> String.format("expect the same file, expected file: %s\n actual file: %s", expectedResult, actualResult));
+            }
+        }
+
+    }
+    @Nested
     class Get {
         @Test
         @DisplayName("Success: get list of shared files")

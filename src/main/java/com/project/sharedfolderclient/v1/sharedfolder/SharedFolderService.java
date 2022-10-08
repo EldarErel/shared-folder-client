@@ -5,6 +5,7 @@ import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
+import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileListError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeRenamedError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileNotExistsError;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,25 +34,22 @@ public class SharedFolderService {
     private final ServerUtil serverUtils;
 
     public List<SharedFile> list() {
-        SharedFile file = new SharedFile().setName("test").setSize("4K").setKind("json").setId(UUID.randomUUID());
-        fileNamesToIdMap.put("test",file.getId());
-        return List.of(file);
-//        log.debug("");
-//        try {
-//            HttpRequest request = RestUtils.createGetRequest(serverUtil.getApiPath());
-//            HttpResponse<String> restResponse = serverUtils.exchange(request);
-//            serverUtil.assertSuccessfulResponse(restResponse);
-//            Response<List<SharedFile>> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
-//            });
-//            List<SharedFile> files = responseBody.getData();
-//            log.debug("Received {} files", files.size());
-//            fileNamesToIdMap = files.stream().collect(Collectors.toMap(SharedFile::getName, SharedFile::getId));
-//            return files;
-//        } catch (Exception e) {
-//            log.error("Could not retrieve the file list: {}", e.getMessage());
-//            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new CouldNotGetFileListError(e.getMessage())));
-//        }
-//        return null;
+        log.debug("");
+        try {
+            HttpRequest request = RestUtils.createGetRequest(serverUtils.getApiPath());
+            HttpResponse<String> restResponse = serverUtils.exchange(request);
+            serverUtils.assertSuccessfulResponse(restResponse);
+            Response<List<SharedFile>> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            });
+            List<SharedFile> files = responseBody.getData();
+            log.debug("Received {} files", files.size());
+            fileNamesToIdMap = files.stream().collect(Collectors.toMap(SharedFile::getName, SharedFile::getId));
+            return files;
+        } catch (Exception e) {
+            log.error("Could not retrieve the file list: {}", e.getMessage());
+            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new CouldNotGetFileListError(e.getMessage())));
+        }
+        return null;
     }
 
     public SharedFile download(String fileName, String downloadPath) {

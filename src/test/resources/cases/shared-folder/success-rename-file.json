@@ -1,0 +1,28 @@
+{
+  "preRequest": {
+    "data": [{
+    "id": "506870a4-3117-11ed-a261-0242ac120002",
+    "name": "nameBeforeChange",
+    "size": "4K",
+    "kind": "json",
+    "dateAdded": "2022-09-10T17:46:52.299814",
+    "dateModified": "2022-09-10T17:46:52.299814"
+  }],
+    "errors": []
+  },
+  "request": {
+    "id": "506870a4-3117-11ed-a261-0242ac120002",
+    "name": "success-rename-file"
+  },
+  "response": {
+    "data": {
+      "id": "506870a4-3117-11ed-a261-0242ac120002",
+      "name": "success-rename-file",
+      "size": "4K",
+      "kind": "json",
+      "dateAdded": "2022-09-10T17:46:52.299814",
+      "dateModified": "2022-09-10T17:46:52.299814"
+    },
+    "errors": []
+  }
+}
