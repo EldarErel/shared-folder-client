@@ -1,0 +1,4 @@
+app:
+  server:
+    url: "http://eldar.com"
+    apiPath: "/1.0/files/"

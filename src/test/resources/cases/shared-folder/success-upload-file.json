@@ -1,0 +1,26 @@
+{
+  "preRequest": {
+    "url": "http://dummy.url/1.0/files",
+    "method": "POST"
+  },
+  "request": {
+    "id": null,
+    "name": "success-upload-file",
+    "size": null,
+    "kind": "json",
+    "dateAdded": null,
+    "dateModified": null,
+    "content": "ew0KICAicHJlUmVxdWVzdCI6IHsNCiAgICAidXJsIjogImh0dHA6Ly9kdW1teS51cmwvMS4wL2ZpbGVzIiwNCiAgICAibWV0aG9kIjogIlBPU1QiDQogIH0sDQogICJyZXF1ZXN0IjogbnVsbCwNCiAgInJlc3BvbnNlIjogew0KICAgICJkYXRhIjoNCiAgICAgIHsNCiAgICAgICAgImlkIjogIjUwNjg3MGE0LTMxMTctMTFlZC1hMjYxLTAyNDJhYzEyMDAwMiIsDQogICAgICAgICJuYW1lIjogInRlc3QiLA0KICAgICAgICAic2l6ZSI6ICI0IiwNCiAgICAgICAgImtpbmQiOiAiUERGIiwNCiAgICAgICAgImRhdGVBZGRlZCI6ICIyMDIyLTA5LTEwVDE3OjQ2OjUyLjI5OTgxNCIsDQogICAgICAgICJkYXRlTW9kaWZpZWQiOiAiMjAyMi0wOS0xMFQxNzo0Njo1Mi4yOTk4MTQiLA0KICAgICAgICAiY29udGVudCI6ICJBUmxFQUE9PSINCiAgICAgICAgfSwNCiAgICAiZXJyb3JzIjogWw0KICAgIF0NCiAgfQ0KfQ0K"
+  },
+  "response": {
+    "data": {
+      "id": "506870a4-3117-11ed-a261-0242ac120002",
+      "name": "success-upload-file",
+      "size": null,
+      "kind": "json",
+      "dateAdded": "2022-09-10T17:46:52.299814",
+      "dateModified": "2022-09-10T17:46:52.299814"
+    },
+    "errors": []
+  }
+}
