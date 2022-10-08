@@ -7,24 +7,30 @@ import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
 import com.project.sharedfolderclient.v1.utils.error.Error;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Optional;
 
 @Component
 @Slf4j
-public class MainFrame extends JFrame {
+public class MainFrame extends JFrame  {
     private DefaultTableModel fileModel;
     private final JLabel console = new JLabel("");
     private final static Object[] columnNames = {"File name", "Kind ", "Size", "Added At", "Last Modified"};
@@ -65,6 +71,8 @@ public class MainFrame extends JFrame {
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit[columnIndex];
             }
+
+
         };
     }
 
@@ -102,7 +110,22 @@ public class MainFrame extends JFrame {
     }
 
     private JTable createTableView() {
-        JTable fileTable = new JTable();
+        JTable fileTable = new JTable() {
+            @Override
+            public void setValueAt(Object aValue, int row, int column) {
+                String newFileName = (String) aValue;
+                String oldFileName = (String) getValueAt(row, column);
+                if (StringUtils.equals(oldFileName,newFileName)) {
+                    return;
+                }
+               SharedFile renamedFile = sharedFolderService.rename(oldFileName, newFileName);
+               if (renamedFile == null) {
+                   return;
+               }
+               refreshView();
+               printSuccess(String.format("file name %s was renamed to %s", oldFileName, newFileName));
+            }
+        };
         fileModel.setColumnIdentifiers(columnNames);
         fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         fileTable.setFont(new Font("Tahoma", Font.PLAIN, 17));
@@ -129,7 +152,6 @@ public class MainFrame extends JFrame {
 
             }
         });
-        ;
         return fileTable;
     }
 
