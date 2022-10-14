@@ -3,13 +3,9 @@ package com.project.sharedfolderclient.v1.sharedfolder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
-import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
-import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileListError;
-import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
-import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeRenamedError;
-import com.project.sharedfolderclient.v1.sharedfile.exception.FileNotExistsError;
+import com.project.sharedfolderclient.v1.sharedfile.exception.*;
 import com.project.sharedfolderclient.v1.utils.FileUtils;
 import com.project.sharedfolderclient.v1.utils.http.Response;
 import com.project.sharedfolderclient.v1.utils.http.RestUtils;
@@ -54,7 +50,7 @@ public class SharedFolderService {
     }
 
     public SharedFile download(String fileName, String downloadPath) {
-        log.info("Downloading {} to {}", fileName, downloadPath);
+        log.debug("Downloading {} to {}", fileName, downloadPath);
         try {
             String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
                     .orElseThrow(()-> new FileNotExistsError(fileName));
@@ -71,26 +67,37 @@ public class SharedFolderService {
             return downloadedFile;
         } catch (Exception e) {
             log.error("Could not retrieve the file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new ServerConnectionError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
         }
         return null;
     }
 
     public SharedFile upload(File fileToUpload) {
         try {
+            log.debug("Uploading file: {}", fileToUpload);
+            if (fileToUpload == null) {
+                log.error("Trying to Upload un exist file");
+                throw new FileNotExistsError("");
+            }
+            String filename = fileToUpload.getName();
+            if (!fileToUpload.exists()) {
+                log.error("Trying to Upload un exist file: {} ", filename);
+                throw new FileNotExistsError(filename);
+            }
             byte[] data = FileCopyUtils.copyToByteArray(fileToUpload);
             SharedFile file = new ContentFile()
                     .setContent(data)
-                    .setName(fileToUpload.getName());
+                    .setName(filename);
             HttpRequest request = RestUtils.creatPostRequest(serverUtils.getApiPath(), file);
             HttpResponse<String> restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
             Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
             });
+            log.info(String.format("File %s was successfully uploaded",filename));
             return responseBody.getData();
         } catch (Exception e) {
             log.error("Could not retrieve the file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new ServerConnectionError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
         }
         return null;
     }

@@ -12,6 +12,7 @@ import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileListError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileNotExistsError;
+import com.project.sharedfolderclient.v1.sharedfile.exception.FileUploadError;
 import com.project.sharedfolderclient.v1.utils.http.Response;
 import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
@@ -52,8 +53,6 @@ import static org.mockito.Mockito.when;
 @Slf4j
 class SharedFolderServiceTest {
 
-    @Autowired
-    private ServerUtil serverUtils;
     private final static String CASE_PATH = "/cases/shared-folder";
     private TestUtils.CaseObject caseObject;
     @Autowired
@@ -218,14 +217,13 @@ class SharedFolderServiceTest {
             File fileToUpload = new File(notExistsFileName);
             assumeFalse(fileToUpload.exists(), "File should not be exists, canceling the test");
 
-                SharedFile actualResult = sharedFolderService.upload(fileToUpload);
+            SharedFile actualResult = sharedFolderService.upload(fileToUpload);
 
-            FileNotExistsError expectedError = new FileNotExistsError(notExistsFileName);
+            FileUploadError expectedError = new FileUploadError(new FileNotExistsError(notExistsFileName).getMessage());
             assertNull(actualResult, "file should not be present");
             verify(testListener).errorEvent(eventArgumentCaptor.capture());
-            ServerConnectionError actualError = (ServerConnectionError) eventArgumentCaptor.getValue().getSource();
-            assertEquals(expectedError,actualError,"expect the same error");
-
+            FileUploadError actualError = (FileUploadError) eventArgumentCaptor.getValue().getSource();
+            assertEquals(expectedError.getMessage(),actualError.getMessage(),"expect the same error");
         }
     }
 
