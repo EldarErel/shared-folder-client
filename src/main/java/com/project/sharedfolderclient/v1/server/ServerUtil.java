@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.utils.ApplicationProperties;
 import com.project.sharedfolderclient.v1.utils.Constants;
+import com.project.sharedfolderclient.v1.utils.error.Error;
 import com.project.sharedfolderclient.v1.utils.http.Response;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.stream.Collectors;
 
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.RESPONSE_BODY_PARSE_ERROR_MESSAGE;
@@ -56,8 +58,10 @@ public class ServerUtil {
         }
         if (!CollectionUtils.isEmpty(body.getErrors())) {
             log.error("Errors: {}", body.getErrors());
-            String errorMessage = StringUtils.join(body.getErrors(), ", ");
-            throw new ServerConnectionError(errorMessage);
+            String errorMessages = (String) body.getErrors().stream()
+                    .map(error -> ((Error)error).getMessage())
+                    .collect(Collectors.joining(","));
+            throw new ServerConnectionError(errorMessages);
         }
     }
 }

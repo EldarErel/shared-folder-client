@@ -66,7 +66,7 @@ public class SharedFolderService {
             log.info(String.format("File %s was successfully downloaded",fileName));
             return downloadedFile;
         } catch (Exception e) {
-            log.error("Could not retrieve the file: {}", e.getMessage());
+            log.error("Could not download file: {}", e.getMessage());
             eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
         }
         return null;
@@ -96,7 +96,7 @@ public class SharedFolderService {
             log.info(String.format("File %s was successfully uploaded",filename));
             return responseBody.getData();
         } catch (Exception e) {
-            log.error("Could not retrieve the file: {}", e.getMessage());
+            log.error("Could not upload file: {}", e.getMessage());
             eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
         }
         return null;
@@ -117,7 +117,7 @@ public class SharedFolderService {
             });
             return responseBody.getData();
         } catch (Exception e) {
-            log.error("Could not edit the file: {}", e.getMessage());
+            log.error("Could not edit file: {}", e.getMessage());
             eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileCouldNotBeRenamedError(e.getMessage())));
         }
         return null;

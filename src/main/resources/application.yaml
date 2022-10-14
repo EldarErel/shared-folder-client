@@ -1,4 +1,4 @@
 app:
   server:
-    url: "http://localhost:8080"
-    apiPath: "/1.0/files/"
+    url: ${SERVER_URL:http://localhost:8080}
+    apiPath: ${FILE_API:/1.0/files/}

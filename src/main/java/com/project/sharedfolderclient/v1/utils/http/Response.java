@@ -20,7 +20,7 @@ public class Response<T> {
     private List<Error> errors = new ArrayList<>();
 
     public Response(T data) {
-            this.data = data;
+        this.data = data;
     }
 
     public Response(List<Error> errors) {
