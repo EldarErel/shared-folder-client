@@ -43,7 +43,7 @@ public class ServerUtil {
             throw new ServerConnectionError();
         }
         if (!Constants.successCodeRange.contains(response.statusCode())) {
-            log.error("status code is {} ", response.statusCode());
+            log.debug("status code is {} ", response.statusCode());
             handleErrors(response);
             return;
         }
