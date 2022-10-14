@@ -10,7 +10,6 @@ import com.project.sharedfolderclient.v1.utils.http.Response;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -19,10 +18,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
-import static com.project.sharedfolderclient.v1.exception.ErrorMessages.RESPONSE_BODY_PARSE_ERROR_MESSAGE;
 import static java.util.stream.Collectors.joining;
 
 @Service
