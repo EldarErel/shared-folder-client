@@ -11,26 +11,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 @Component
 @Slf4j
@@ -62,12 +56,24 @@ public class MainFrame extends JFrame  {
         JScrollPane scrollPane = new JScrollPane();
         contentPane.add(scrollPane, BorderLayout.CENTER);
         scrollPane.setViewportView(createTableView());
-        contentPane.add(createUploadButton(), BorderLayout.SOUTH);
+        JPanel southButtons = new JPanel();
+        southButtons.setLayout(new GridLayout(1, 2));
+        southButtons.add(createUploadButton());
+        southButtons.add(createRefreshButton());
+        contentPane.add(southButtons, BorderLayout.SOUTH);
         contentPane.add(console, BorderLayout.NORTH);
         log.debug("Retrieving list of files");
         refreshView();
     }
 
+    private JButton createRefreshButton() {
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(evt -> {
+                printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
+                refreshView();
+                });
+        return refreshButton;
+    }
     private DefaultTableModel createTableModel() {
         return new DefaultTableModel() {
             final boolean[] canEdit = editableCells;
