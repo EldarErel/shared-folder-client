@@ -18,10 +18,12 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.RESPONSE_BODY_PARSE_ERROR_MESSAGE;
+import static java.util.stream.Collectors.joining;
 
 @Service
 @RequiredArgsConstructor
@@ -56,11 +58,12 @@ public class ServerUtil {
             log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
             throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
         }
-        if (!CollectionUtils.isEmpty(body.getErrors())) {
-            log.error("Errors: {}", body.getErrors());
-            String errorMessages = (String) body.getErrors().stream()
-                    .map(error -> ((Error)error).getMessage())
-                    .collect(Collectors.joining(","));
+        List<Error> errorList = (List<Error>) body.getErrors();
+        if (!CollectionUtils.isEmpty(errorList)) {
+            log.error("Errors: {}", errorList);
+            String errorMessages = errorList.stream()
+                    .map(Error::getMessage)
+                    .collect(joining(","));
             throw new ServerConnectionError(errorMessages);
         }
     }
