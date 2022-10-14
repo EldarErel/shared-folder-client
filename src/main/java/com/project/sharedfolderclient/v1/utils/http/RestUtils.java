@@ -1,9 +1,11 @@
 package com.project.sharedfolderclient.v1.utils.http;
 
 import com.project.sharedfolderclient.v1.utils.json.JSON;
+import jdk.jfr.ContentType;
 import lombok.SneakyThrows;
 
 import java.net.URI;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 
 public class RestUtils {
@@ -11,6 +13,7 @@ public class RestUtils {
     public static HttpRequest createGetRequest(String url) {
         return HttpRequest.newBuilder()
                 .uri(new URI(url))
+                .setHeader("Content-Type", "application/json")
                 .GET()
                 .build();
     }
@@ -19,6 +22,7 @@ public class RestUtils {
     public static HttpRequest createDeleteRequest(String url) {
         return HttpRequest.newBuilder()
                 .uri(new URI(url))
+                .setHeader("Content-Type", "application/json")
                 .DELETE()
                 .build();
     }
@@ -27,6 +31,7 @@ public class RestUtils {
     public static HttpRequest createPutRequest(String url, Object object) {
         return HttpRequest.newBuilder()
                 .uri(new URI(url))
+                .setHeader("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(JSON.objectMapper.writeValueAsString(object)))
                 .build();
     }
@@ -35,6 +40,7 @@ public class RestUtils {
     public static HttpRequest creatPostRequest(String url, Object object) {
         return HttpRequest.newBuilder()
                 .uri(new URI(url))
+                .setHeader("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(JSON.objectMapper.writeValueAsString(object)))
                 .build();
     }

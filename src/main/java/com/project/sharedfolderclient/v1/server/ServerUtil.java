@@ -1,5 +1,6 @@
 package com.project.sharedfolderclient.v1.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.utils.ApplicationProperties;
@@ -35,7 +36,7 @@ public class ServerUtil {
         return appProperties.getServer().getUrl() + appProperties.getServer().getApiPath();
     }
 
-    public void assertSuccessfulResponse(HttpResponse<String> response) {
+    public void assertSuccessfulResponse(HttpResponse<String> response) throws JsonProcessingException {
         if (response == null) {
             log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
             throw new ServerConnectionError();
@@ -43,21 +44,20 @@ public class ServerUtil {
         if (!Constants.successCodeRange.contains(response.statusCode())) {
             log.error("status code is {} ", response.statusCode());
         }
-        try {
-            Response<?> body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
-            });
-            if (body == null) {
-                log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-                throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-            }
-            if (!CollectionUtils.isEmpty(body.getErrors())) {
-                log.error("Errors: {}", body.getErrors());
-                String errorMessage = StringUtils.join(body.getErrors(), ", ");
-                throw new ServerConnectionError(errorMessage);
-            }
-        } catch (Exception e) {
-            log.error(RESPONSE_BODY_PARSE_ERROR_MESSAGE + e.getMessage());
-            throw new ServerConnectionError(RESPONSE_BODY_PARSE_ERROR_MESSAGE);
+        if (response.statusCode() == 204) {
+            // success with no content
+            return;
+        }
+        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
+        });
+        if (body == null) {
+            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+        }
+        if (!CollectionUtils.isEmpty(body.getErrors())) {
+            log.error("Errors: {}", body.getErrors());
+            String errorMessage = StringUtils.join(body.getErrors(), ", ");
+            throw new ServerConnectionError(errorMessage);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.project.sharedfolderclient.v1.sharedfolder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
+import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileListError;
@@ -55,7 +56,8 @@ public class SharedFolderService {
     public SharedFile download(String fileName, String downloadPath) {
         log.info("Downloading {} to {}", fileName, downloadPath);
         try {
-            String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName);
+            String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
+                    .orElseThrow(()-> new FileNotExistsError(fileName));
             HttpResponse<String> restResponse = serverUtils.exchange(RestUtils.createGetRequest(requestUrl));
             serverUtils.assertSuccessfulResponse(restResponse);
             Response<ContentFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
@@ -63,12 +65,13 @@ public class SharedFolderService {
             ContentFile downloadedFile = responseBody.getData();
             byte[] fileAsBytes = downloadedFile.getContent();
             log.debug("Saving file {} ", downloadedFile.getName());
-            File file = FileUtils.createFile(String.format("%s/%s", downloadPath, fileName));
+            File file = FileUtils.createFile(String.format("%s/%s",downloadPath, fileName));
             FileUtils.writeByteArrayToFile(file, fileAsBytes);
+            log.info(String.format("File %s was successfully downloaded",fileName));
             return downloadedFile;
         } catch (Exception e) {
             log.error("Could not retrieve the file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileNotExistsError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new ServerConnectionError(e.getMessage())));
         }
         return null;
     }
@@ -87,7 +90,7 @@ public class SharedFolderService {
             return responseBody.getData();
         } catch (Exception e) {
             log.error("Could not retrieve the file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileNotExistsError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new ServerConnectionError(e.getMessage())));
         }
         return null;
     }

@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,14 +27,17 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Component
 @Slf4j
 public class MainFrame extends JFrame  {
     private DefaultTableModel fileModel;
     private final JLabel console = new JLabel("");
-    private final static Object[] columnNames = {"File name", "Kind ", "Size", "Added At", "Last Modified"};
+    private final static Object[] columnNames = {"File name", "Kind", "Size", "Added At", "Last Modified"};
     private final static boolean[] editableCells = new boolean[]{
             true, false, false, false, false
     };
@@ -79,12 +83,12 @@ public class MainFrame extends JFrame  {
     private JButton createUploadButton() {
         JButton uploadButton = new JButton("Upload file");
         uploadButton.addActionListener(evt -> {
-            // create an object of JFileChooser class
             JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+            j.setCurrentDirectory(new java.io.File("."));
+            j.setDialogTitle("Choose File to Upload");
+            j.setFileSelectionMode(JFileChooser.FILES_ONLY);;
             // invoke the showsSaveDialog function to show the save dialog
-            int r = j.showSaveDialog(null);
-            // if the user selects a file
-            if (r == JFileChooser.APPROVE_OPTION) {
+            if (j.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 // set the label to the path of the selected file
                 String path = j.getSelectedFile().getAbsolutePath();
                 File fileToUpload = new File(path);
@@ -165,27 +169,29 @@ public class MainFrame extends JFrame  {
             @SneakyThrows
             @Override
             public void mouseReleased(MouseEvent e) {
-                String fileName = (String) fileTable.getModel().getValueAt(0, fileTable.getSelectedRow());
+                String fileName = (String) fileTable.getModel().getValueAt( fileTable.getSelectedRow(),0);
                 if (!sharedFolderService.deleteByName(fileName)) {
                     return;
                 }
+                printSuccess(String.format("file %s was deleted",fileName));
                 refreshView();
-                printSuccess("file " + fileTable.getModel().getValueAt(0, fileTable.getSelectedRow()) + " was deleted");
             }
         });
         downloadItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent ev) {
-                String fileName = (String) fileTable.getModel().getValueAt(0, fileTable.getSelectedRow());
-                // create an object of JFileChooser class
                 JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-                // invoke the showsSaveDialog function to show the save dialog
-                int r = j.showSaveDialog(null);
-                // if the user selects a file
-                if (r == JFileChooser.APPROVE_OPTION) {
+
+                j.setCurrentDirectory(new java.io.File("."));
+                j.setDialogTitle("Choose Folder");
+                j.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                j.setAcceptAllFileFilterUsed(false);
+
+                // invoke the showsSaveDialog function to show the open dialog
+                if (j.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                     // set the label to the path of the selected file
                     String path = j.getSelectedFile().getAbsolutePath();
-                    String fileNameToDownload = (String) fileTable.getModel().getValueAt(0, fileTable.getSelectedRow());
+                    String fileNameToDownload = (String) fileTable.getModel().getValueAt( fileTable.getSelectedRow(), 0);
                     try {
                         if (sharedFolderService.download(fileNameToDownload, path) == null) {
                             return;
@@ -203,16 +209,13 @@ public class MainFrame extends JFrame  {
     }
 
     private void refreshView() {
-        Object[] fileList = Optional.ofNullable(sharedFolderService.list())
-                .orElse(new ArrayList<>())
-                .stream()
-                .map(file -> (Object) file)
-                .toArray();
-        for (Object fileAsObject : fileList) {
-            SharedFile pointer = (SharedFile) fileAsObject;
-            Object[] fileRow = {pointer.getName(), pointer.getKind(), pointer.getSize(), pointer.getDateAdded(), pointer.getDateModified()};
+        List<SharedFile> fileList = sharedFolderService.list();
+        fileModel.setRowCount(0);
+        sharedFolderService.list()
+                .forEach(file-> {
+            Object[] fileRow = {file.getName(), file.getKind(), file.getSize(), file.getDateAdded(), file.getDateModified()};
             fileModel.addRow(fileRow);
-        }
+        });
     }
 
     @EventListener
@@ -224,7 +227,7 @@ public class MainFrame extends JFrame  {
     @EventListener
     public void errorHandler(ApplicationEvents.ErrorEvent errorEvent) {
         Error error = (Error) errorEvent.getSource();
-        printError(error.getName() + ": " + error.getMessage());
+        printError(error.getMessage());
     }
 }
 
