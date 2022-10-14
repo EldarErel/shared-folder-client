@@ -44,18 +44,35 @@ public class ServerUtil {
         }
         if (!Constants.successCodeRange.contains(response.statusCode())) {
             log.error("status code is {} ", response.statusCode());
+            handleErrors(response);
+            return;
         }
         if (response.statusCode() == 204) {
             // success with no content
             return;
         }
-        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
-        if (body == null) {
+        if (response.body() == null) {
             log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
             throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
         }
-        List<Error> errorList = (List<Error>) body.getErrors();
+        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
+        });
+        handleErrors(body);
+
+    }
+
+    private void handleErrors(HttpResponse<String> response) throws JsonProcessingException {
+        if (response.body() == null) {
+            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+        }
+        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
+        });
+        handleErrors(body);
+
+    }
+    private void handleErrors(Response body) {
+        List<Error> errorList = body.getErrors();
         if (!CollectionUtils.isEmpty(errorList)) {
             log.error("Errors: {}", errorList);
             String errorMessages = errorList.stream()
@@ -63,5 +80,6 @@ public class ServerUtil {
                     .collect(joining(","));
             throw new ServerConnectionError(errorMessages);
         }
+
     }
 }
