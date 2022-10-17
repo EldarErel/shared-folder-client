@@ -189,7 +189,7 @@ public class MainFrame extends JFrame  {
 
                 j.setCurrentDirectory(new java.io.File("."));
                 j.setDialogTitle("Choose Folder");
-                j.setControlButtonsAreShown(false);
+                j.setApproveButtonText("Save");
                 j.setFileFilter(new FileFilter() {
                     @Override
                     public boolean accept(File file) {
@@ -205,7 +205,7 @@ public class MainFrame extends JFrame  {
                 j.setAcceptAllFileFilterUsed(false);
 
                 // invoke the showsSaveDialog function to show the open dialog
-                if (j.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                if (j.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = j.getSelectedFile();
                     if (!selectedFile.isDirectory()) {
                         // fix an issue with macOS which select file instead of directory
