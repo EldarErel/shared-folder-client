@@ -193,9 +193,14 @@ public class MainFrame extends JFrame  {
 
                 // invoke the showsSaveDialog function to show the open dialog
                 if (j.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = j.getSelectedFile();
+                    if (!selectedFile.isDirectory()) {
+                        // fix an issue with macOS which select file instead of directory
+                        selectedFile = selectedFile.getParentFile();
+                    }
                     // set the label to the path of the selected file
-                    String path = j.getSelectedFile().getAbsolutePath();
-                    String fileNameToDownload = (String) fileTable.getModel().getValueAt( fileTable.getSelectedRow(), 0);
+                    String path = selectedFile.getAbsolutePath();
+                    String fileNameToDownload = (String) fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0);
                     try {
                         if (sharedFolderService.download(fileNameToDownload, path) == null) {
                             return;
