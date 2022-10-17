@@ -206,8 +206,8 @@ public class MainFrame extends JFrame  {
                         printSuccess("file " + fileTable.getModel().getValueAt(0, fileTable.getSelectedRow())
                                 + " was downloaded to " + path);
                     } catch (Exception e) {
-                        log.error("Could not download the file {}", e.getMessage());
-                        printError("Could not download the file: " + e.getMessage());
+                        log.error("Could not download the file to {}: {}", path, e.getMessage());
+                        printError(String.format("Could not download the file to %s: %s",path, e.getMessage()));
                     }
                 }
             }
