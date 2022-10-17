@@ -205,7 +205,7 @@ public class MainFrame extends JFrame  {
                         if (sharedFolderService.download(fileNameToDownload, path) == null) {
                             return;
                         }
-                        printSuccess("file " + fileTable.getModel().getValueAt(0, fileTable.getSelectedRow())
+                        printSuccess("file " + fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0)
                                 + " was downloaded to " + path);
                     } catch (Exception e) {
                         log.error("Could not download the file to {}: {}", path, e.getMessage());
