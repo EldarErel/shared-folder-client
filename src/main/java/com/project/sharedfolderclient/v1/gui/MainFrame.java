@@ -185,22 +185,12 @@ public class MainFrame extends JFrame  {
         downloadItem.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent ev) {
+                String fileNameToDownload = (String) fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0);
                 JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 
                 j.setCurrentDirectory(new java.io.File("."));
                 j.setDialogTitle("Choose Folder");
                 j.setApproveButtonText("Save");
-                j.setFileFilter(new FileFilter() {
-                    @Override
-                    public boolean accept(File file) {
-                        return file.isDirectory();
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return "only directories can be selected";
-                    }
-                });
                 j.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 j.setAcceptAllFileFilterUsed(false);
 
@@ -213,7 +203,6 @@ public class MainFrame extends JFrame  {
                     }
                     // set the label to the path of the selected file
                     String path = selectedFile.getAbsolutePath();
-                    String fileNameToDownload = (String) fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0);
                     try {
                         if (sharedFolderService.download(fileNameToDownload, path) == null) {
                             return;
