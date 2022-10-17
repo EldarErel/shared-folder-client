@@ -5,10 +5,10 @@ import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
 import com.project.sharedfolderclient.v1.utils.error.Error;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -21,14 +21,12 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class MainFrame extends JFrame  {
     private DefaultTableModel fileModel;
     private final JLabel console = new JLabel("");
@@ -36,8 +34,7 @@ public class MainFrame extends JFrame  {
     private final static boolean[] editableCells = new boolean[]{
             true, false, false, false, false
     };
-    @Autowired
-    private SharedFolderService sharedFolderService;
+    private final SharedFolderService sharedFolderService;
 
     /**
      * Create the frame.
@@ -93,7 +90,7 @@ public class MainFrame extends JFrame  {
             JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
             j.setCurrentDirectory(new java.io.File("."));
             j.setDialogTitle("Choose File to Upload");
-            j.setFileSelectionMode(JFileChooser.FILES_ONLY);;
+            j.setFileSelectionMode(JFileChooser.FILES_ONLY);
             // invoke the showsSaveDialog function to show the save dialog
             if (j.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 // set the label to the path of the selected file
