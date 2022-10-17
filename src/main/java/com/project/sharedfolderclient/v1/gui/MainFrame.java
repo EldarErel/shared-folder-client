@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -139,6 +140,7 @@ public class MainFrame extends JFrame  {
         fileModel.setColumnIdentifiers(columnNames);
         fileTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         fileTable.setFont(new Font("Tahoma", Font.PLAIN, 17));
+        fileTable.setRowHeight(30);
         fileTable.setModel(fileModel);
         fileTable.setBackground(Color.white);
         fileTable.setAutoCreateRowSorter(true);
@@ -155,11 +157,10 @@ public class MainFrame extends JFrame  {
                 int rowindex = fileTable.getSelectedRow();
                 if (rowindex < 0)
                     return;
-                if (e.isPopupTrigger() && e.getComponent() instanceof JTable) {
+                if (SwingUtilities.isRightMouseButton(e) && e.getComponent() instanceof JTable) {
                     JPopupMenu popup = createRightClickMenu(fileTable);
                     popup.show(e.getComponent(), e.getX(), e.getY());
                 }
-
             }
         });
         return fileTable;
@@ -217,6 +218,9 @@ public class MainFrame extends JFrame  {
     private void refreshView() {
         List<SharedFile> fileList = sharedFolderService.list();
         fileModel.setRowCount(0);
+        if (CollectionUtils.isEmpty(fileList)) {
+            return;
+        }
         sharedFolderService.list()
                 .forEach(file-> {
             Object[] fileRow = {file.getName(), file.getKind(), file.getSize(), file.getDateAdded(), file.getDateModified()};
