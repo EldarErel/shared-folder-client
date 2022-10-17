@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -188,6 +189,18 @@ public class MainFrame extends JFrame  {
 
                 j.setCurrentDirectory(new java.io.File("."));
                 j.setDialogTitle("Choose Folder");
+                j.setControlButtonsAreShown(false);
+                j.setFileFilter(new FileFilter() {
+                    @Override
+                    public boolean accept(File file) {
+                        return file.isDirectory();
+                    }
+
+                    @Override
+                    public String getDescription() {
+                        return "only directories can be selected";
+                    }
+                });
                 j.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 j.setAcceptAllFileFilterUsed(false);
 
