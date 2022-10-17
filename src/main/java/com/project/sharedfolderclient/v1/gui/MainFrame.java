@@ -187,8 +187,7 @@ public class MainFrame extends JFrame  {
             public void mouseReleased(MouseEvent ev) {
                 String fileNameToDownload = (String) fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0);
                 JFileChooser j = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-
-                j.setCurrentDirectory(new java.io.File("."));
+                j.setFileSystemView(FileSystemView.getFileSystemView());
                 j.setDialogTitle("Choose Folder");
                 j.setApproveButtonText("Save");
                 j.setFileFilter(new FileFilter() {
@@ -196,15 +195,17 @@ public class MainFrame extends JFrame  {
                     public boolean accept(File file) {
                         return file.isDirectory();
                     }
+
                     @Override
                     public String getDescription() {
                         return "only directories can be selected";
                     }
                 });
+                j.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 j.setAcceptAllFileFilterUsed(false);
 
                 // invoke the showsSaveDialog function to show the open dialog
-                if (j.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                if (j.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = j.getSelectedFile();
                     if (!selectedFile.isDirectory()) {
                         // fix an issue with macOS which select file instead of directory
