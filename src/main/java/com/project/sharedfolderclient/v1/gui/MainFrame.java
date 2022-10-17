@@ -191,7 +191,16 @@ public class MainFrame extends JFrame  {
                 j.setCurrentDirectory(new java.io.File("."));
                 j.setDialogTitle("Choose Folder");
                 j.setApproveButtonText("Save");
-                j.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                j.setFileFilter(new FileFilter() {
+                    @Override
+                    public boolean accept(File file) {
+                        return file.isDirectory();
+                    }
+                    @Override
+                    public String getDescription() {
+                        return "only directories can be selected";
+                    }
+                });
                 j.setAcceptAllFileFilterUsed(false);
 
                 // invoke the showsSaveDialog function to show the open dialog
