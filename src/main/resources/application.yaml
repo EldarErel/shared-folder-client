@@ -1,4 +1,4 @@
 app:
   server:
-    url: ${SERVER_URL:http://localhost:8080}
+    url: ${SHARED_FOLDER_URL:http://localhost:8080}
     apiPath: ${FILE_API:/1.0/files/}

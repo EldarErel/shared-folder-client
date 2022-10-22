@@ -63,6 +63,7 @@
     </dependencies>
 
     <build>
+        <finalName>shared-folder-client</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
