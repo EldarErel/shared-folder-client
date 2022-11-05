@@ -1,5 +1,6 @@
-package com.project.sharedfolderclient.v1.exception;
+package com.project.sharedfolderclient.v1.events;
 
+import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.utils.error.Error;
 import org.springframework.context.ApplicationEvent;
 

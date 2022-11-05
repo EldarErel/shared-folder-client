@@ -3,8 +3,10 @@ package com.project.sharedfolderclient.v1.sharedfolder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.project.sharedfolderclient.TestUtils;
-import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
+import com.project.sharedfolderclient.v1.events.ApplicationErrorEvents;
+import com.project.sharedfolderclient.v1.events.ApplicationSuccessEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
+import com.project.sharedfolderclient.v1.gui.MainFrame;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
@@ -22,6 +24,8 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -32,16 +36,22 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -53,6 +63,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @ActiveProfiles("test")
 @Slf4j
+@DirtiesContext
 class SharedFolderServiceTest {
 
     private final static String CASE_PATH = "/cases/shared-folder";
@@ -62,12 +73,23 @@ class SharedFolderServiceTest {
     @SpyBean
     private ServerUtil serverUtil;
     @Captor
-    private ArgumentCaptor<ApplicationErrorEvents.BaseErrorEvent> eventArgumentCaptor;
-    @MockBean
-    private TestErrorEventListener testListener;
+    private ArgumentCaptor<ApplicationErrorEvents.BaseErrorEvent> errorEventArgumentCaptor;
+
+    @Captor
+    private ArgumentCaptor<ApplicationSuccessEvents.SuccessEvent> successEventArgumentCaptor;
+    @SpyBean
+    private TestEventListener testListener;
+
+    @SpyBean
+    private MainFrame mainFrame;
+
+
 
     @BeforeAll
     public static void setUpHeadlessMode() {
+        Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
+        Awaitility.setDefaultPollDelay(Duration.ZERO);
+        Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
         System.setProperty("java.awt.headless", "false");
     }
 
@@ -135,8 +157,8 @@ class SharedFolderServiceTest {
 
             List<SharedFile> actualResult = sharedFolderService.list();
 
-            verify(testListener).errorEvent(eventArgumentCaptor.capture());
-            BaseError actualError = (BaseError) eventArgumentCaptor.getValue().getSource();
+            verify(testListener).errorEvent(errorEventArgumentCaptor.capture());
+            BaseError actualError = (BaseError) errorEventArgumentCaptor.getValue().getSource();
             assertEquals(expectedError.getMessage(), actualError.getMessage()
                     , "error message expected to be: " + expectedError.getMessage());
             assertNull(actualResult, "expect no data");
@@ -146,9 +168,10 @@ class SharedFolderServiceTest {
 
     @Nested
     class Download {
+
         @Test
         @DisplayName("Success: download file")
-        void successDownloadFile() throws IOException, InterruptedException {
+        void successDownloadFile() throws IOException {
             String testFileName = "test.pdf";
             Resource resource = new ClassPathResource("downloadLocation");
             String testFilePath = resource.getURI().getPath();
@@ -162,12 +185,16 @@ class SharedFolderServiceTest {
                     .thenReturn(TestUtils.createHttpResponse(new Response<>(caseObject.getPreRequest().get("data"))));
             sharedFolderService.list();
 
-            boolean isDownloaded = sharedFolderService.download(testFileName, testFilePath);
+            sharedFolderService.download(testFileName, testFilePath);
 
-            assertTrue(isDownloaded, "file should be downloaded");
-            File downloadedFile = new File(testFilePath + "/" + testFileName);
-            assertTrue(downloadedFile.exists(), "File should be exists");
-            assertTrue(downloadedFile.delete(), "File was not deleted");
+            await().until(()-> {
+                File downloadedFile = new File(testFilePath + "/" + testFileName);
+                if (downloadedFile.exists()) {
+                    assertTrue(downloadedFile.delete(), "File was not deleted");
+                    return true;
+                }
+                return false;
+            });
         }
     }
 
@@ -175,7 +202,8 @@ class SharedFolderServiceTest {
     class Upload {
         @Test
         @DisplayName("Success: upload file")
-        void successUpload() throws IOException {
+        @DirtiesContext
+        void successUpload() throws IOException, ExecutionException, InterruptedException {
             String uploadFileCaseName = "success-upload-file";
             caseObject = TestUtils.generateCaseObject(CASE_PATH, uploadFileCaseName);
             File fileToUpload = new File(uploadFileCaseName);
@@ -191,8 +219,10 @@ class SharedFolderServiceTest {
                 Mockito.doReturn(response).when(serverUtil).exchange(
                         any(HttpPost.class));
 
-                SharedFile actualResult = sharedFolderService.upload(fileToUpload);
+                Future<SharedFile> actualResponseFuture =  sharedFolderService.upload(fileToUpload);
 
+                await().until(actualResponseFuture::isDone);
+                SharedFile actualResult = actualResponseFuture.get();
                 assertNotNull(actualResult, "expect to have a file");
                 assertEquals(expectedResult, actualResult
                         , () -> String.format("expect the same file, expected file: %s\n actual file: %s", expectedResult, actualResult));
@@ -204,15 +234,17 @@ class SharedFolderServiceTest {
         @DisplayName("Fail: file not exists")
         void failUploadFileNotExists() {
             String notExistsFileName = "NotExistsFileName";
+            FileUploadError expectedError = new FileUploadError(new FileNotExistsError(notExistsFileName).getMessage());
             File fileToUpload = new File(notExistsFileName);
             assumeFalse(fileToUpload.exists(), "File should not be exists, canceling the test");
 
-            SharedFile actualResult = sharedFolderService.upload(fileToUpload);
+            sharedFolderService.upload(fileToUpload);
 
-            FileUploadError expectedError = new FileUploadError(new FileNotExistsError(notExistsFileName).getMessage());
-            assertNull(actualResult, "file should not be present");
-            verify(testListener).errorEvent(eventArgumentCaptor.capture());
-            FileUploadError actualError = (FileUploadError) eventArgumentCaptor.getValue().getSource();
+            await().until(()-> {
+                verify(testListener).errorEvent(errorEventArgumentCaptor.capture());
+                return true;
+            });
+            FileUploadError actualError = (FileUploadError) errorEventArgumentCaptor.getValue().getSource();
             assertEquals(expectedError.getMessage(),actualError.getMessage(),"expect the same error");
         }
     }
@@ -227,8 +259,8 @@ class SharedFolderServiceTest {
 
             boolean isDeleted = sharedFolderService.deleteByName(FILE_NAME);
 
-            verify(testListener).errorEvent(eventArgumentCaptor.capture());
-            FileCouldNotBeDeletedError actualError = (FileCouldNotBeDeletedError) eventArgumentCaptor.getValue().getSource();
+            verify(testListener).errorEvent(errorEventArgumentCaptor.capture());
+            FileCouldNotBeDeletedError actualError = (FileCouldNotBeDeletedError) errorEventArgumentCaptor.getValue().getSource();
             assertEquals(expectedError,actualError,"expect the same error");
             assertFalse(isDeleted, "file should not be deleted");
         }
@@ -249,8 +281,8 @@ class SharedFolderServiceTest {
 
             boolean isDeleted = sharedFolderService.deleteByName(existFileName);
 
-            verify(testListener).errorEvent(eventArgumentCaptor.capture());
-            BaseError actualError = (BaseError) eventArgumentCaptor.getValue().getSource();
+            verify(testListener).errorEvent(errorEventArgumentCaptor.capture());
+            BaseError actualError = (BaseError) errorEventArgumentCaptor.getValue().getSource();
             assertEquals(expectedError.getMessage(), actualError.getMessage()
                     , "error message expected to be: " + expectedError.getMessage());
             assertFalse(isDeleted, "file should not be deleted");
@@ -274,11 +306,14 @@ class SharedFolderServiceTest {
     }
 
     @TestComponent
-    private static class TestErrorEventListener {
+    private static class TestEventListener {
         @EventListener
         public void errorEvent(ApplicationErrorEvents.BaseErrorEvent errorEvent) {
         }
-
+        @EventListener
+        public void successEvent(ApplicationSuccessEvents.SuccessEvent successEvent) {
+            log.info("success");
+        }
 
     }
 

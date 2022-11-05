@@ -1,9 +1,10 @@
 package com.project.sharedfolderclient.v1.sharedfolder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
+import com.project.sharedfolderclient.v1.events.ApplicationErrorEvents;
+import com.project.sharedfolderclient.v1.events.ApplicationSuccessEvents;
+import com.project.sharedfolderclient.v1.gui.MainFrame;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
-import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfile.exception.*;
 import com.project.sharedfolderclient.v1.utils.FileUtils;
@@ -16,9 +17,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.util.*;
@@ -29,9 +30,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class SharedFolderService {
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     private static Map<String, UUID> fileNamesToIdMap = new HashMap<>();
     private final ApplicationEventPublisher eventBus;
     private final ServerUtil serverUtils;
+
+
 
     /**
      * retrieve list of files
@@ -62,14 +67,12 @@ public class SharedFolderService {
      * download file from the shared folder
      * @param fileName - the name od the file
      * @param downloadPath - the download path
-     * @return - the file object associate with this file
-     *
-     * On Exception - application event will be sent
+     * On Success - SuccessEvent Class event will be sent
+     * On Exception - BaseErrorEvent Class event will be sent
      */
-    public boolean download(String fileName, String downloadPath) {
+    public void download(String fileName, String downloadPath) {
         log.debug("Downloading {} to {}", fileName, downloadPath);
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<Boolean> future =  executorService.submit(()-> {
+        executorService.execute(()-> {
             try {
                 String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
                         .orElseThrow(()-> new FileNotExistsError(fileName));
@@ -78,63 +81,49 @@ public class SharedFolderService {
                 File file = FileUtils.createFile(String.format("%s/%s",downloadPath, fileName));
                 FileUtils.writeByteArrayToFile(file, restResponse.getEntity().getContent().readAllBytes());
                 log.info(String.format("File %s was successfully downloaded",fileName));
-                return true;
+                eventBus.publishEvent(new ApplicationSuccessEvents.SuccessEvent(String.format("file %s was downloaded to %s",fileName, downloadPath)));
             } catch (Exception e) {
                 log.error("Could not download file: {}", e.getMessage());
                 eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
             }
-            return false;
         });
-        try {
-            return future.get();
-        } catch (Exception e) {
-            log.error("Could not download file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
-        }
-        return false;
     }
 
     /**
      *  upload file to the shared folder server
      * @param fileToUpload - the file object to upload
-     * @return - the file object associate with the uploaded file\
-     *
-     * On Exception - application event will be sent
+     * @return - future with SharedFile object
+     * On Success - SuccessEvent Class event will be sent
+     * On Exception - BaseErrorEvent Class event will be sent
      */
-    public SharedFile upload(File fileToUpload) {
-        try {
-            log.debug("Uploading file: {}", fileToUpload);
-            if (fileToUpload == null) {
-                log.error("Trying to Upload un exist file");
-                throw new FileNotExistsError("");
-            }
-            String filename = fileToUpload.getName();
-            if (!fileToUpload.exists()) {
-                log.error("Trying to Upload un exist file: {} ", filename);
-                throw new FileNotExistsError(filename);
-            }
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
-            Future<SharedFile> future =  executorService.submit(()-> {
-                try {
-                    HttpPost requestEntity = RestUtils.createPostRequest(serverUtils.getApiPath(), fileToUpload);
-                    org.apache.http.HttpResponse restResponse = serverUtils.exchange(requestEntity);
-                    serverUtils.assertSuccessfulResponse(restResponse);
-                    Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
-                    });
-                    log.info(String.format("File %s was successfully uploaded",filename));
-                    return responseBody.getData();
-                } catch (Exception e) {
-                    log.error("Could not upload file: {}", e.getMessage());
-                    eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
+    public Future<SharedFile> upload(File fileToUpload) {
+        log.debug("Uploading file: {}", fileToUpload);
+       return executorService.submit(()-> {
+            try {
+                if (fileToUpload == null) {
+                    log.error("Trying to Upload un exist file");
+                    throw new FileNotExistsError("");
                 }
-                return null;
-            });
-            return future.get();
-        } catch (Exception e) {
-            log.error("Could not upload file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
-        }
-        return null;
+                String filename = fileToUpload.getName();
+                if (!fileToUpload.exists()) {
+                    log.error("Trying to Upload un exist file: {} ", filename);
+                    throw new FileNotExistsError(filename);
+                }
+                eventBus.publishEvent(new ApplicationSuccessEvents.SuccessEvent(String.format("file %s was successfully uploaded",filename)));
+                HttpPost requestEntity = RestUtils.createPostRequest(serverUtils.getApiPath(), fileToUpload);
+                org.apache.http.HttpResponse restResponse = serverUtils.exchange(requestEntity);
+                serverUtils.assertSuccessfulResponse(restResponse);
+                log.info(String.format("File %s was successfully uploaded",filename));
+                Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
+                });
+                log.info(String.format("File %s was successfully uploaded",filename));
+                return responseBody.getData();
+            } catch (Exception e) {
+                log.error("Could not upload file: {}", e.getMessage());
+                eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
+            }
+            return null;
+        });
     }
 
     /**

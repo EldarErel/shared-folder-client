@@ -1,11 +1,13 @@
 package com.project.sharedfolderclient.v1.gui;
 
+import com.project.sharedfolderclient.v1.events.ApplicationSuccessEvents;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -20,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Future;
 
 @Component
 @Slf4j
@@ -59,6 +62,7 @@ public class MainFrame extends JFrame  {
         contentPane.add(console, BorderLayout.NORTH);
         log.debug("Retrieving list of files");
         refreshView();
+        printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
     }
 
     /**
@@ -83,8 +87,9 @@ public class MainFrame extends JFrame  {
     private JButton createRefreshButton() {
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(evt -> {
-                refreshView();
-                });
+            refreshView();
+            printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
+        });
         return refreshButton;
     }
     private DefaultTableModel createTableModel() {
@@ -111,12 +116,7 @@ public class MainFrame extends JFrame  {
                 // set the label to the path of the selected file
                 String path = j.getSelectedFile().getAbsolutePath();
                 File fileToUpload = new File(path);
-                if (sharedFolderService.upload(fileToUpload) == null) {
-                    return;
-                }
-                printSuccess("File successfully uploaded");
-                refreshView();
-
+               sharedFolderService.upload(fileToUpload);
             }
         });
         return uploadButton;
@@ -184,8 +184,8 @@ public class MainFrame extends JFrame  {
                 if (!sharedFolderService.deleteByName(fileName)) {
                     return;
                 }
-                printSuccess(String.format("file %s was deleted",fileName));
                 refreshView();
+                printSuccess(String.format("file %s was deleted",fileName));
             }
         });
         downloadItem.addMouseListener(new MouseAdapter() {
@@ -221,11 +221,7 @@ public class MainFrame extends JFrame  {
                     String path = selectedFile.getAbsolutePath();
                     try {
                         printSuccess("Downloading the request file..");
-                        if (!sharedFolderService.download(fileNameToDownload, path)) {
-                            return;
-                        }
-                        printSuccess("file " + fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0)
-                                + " was downloaded to " + path);
+                        sharedFolderService.download(fileNameToDownload, path);
                     } catch (Exception e) {
                         log.error("Could not download the file to {}: {}", path, e.getMessage());
                         printError(String.format("Could not download the file to %s: %s",path, e.getMessage()));
@@ -250,7 +246,11 @@ public class MainFrame extends JFrame  {
             Object[] fileRow = {file.getName(), file.getKind(), file.getSize(), file.getDateAdded(), file.getDateModified()};
             fileModel.addRow(fileRow);
         });
-        printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
+    }
+
+    @EventListener
+    public void printOnSuccess(ApplicationSuccessEvents.SuccessEvent successEvent) {
+        printSuccess(successEvent.getSource().toString());
     }
 }
 

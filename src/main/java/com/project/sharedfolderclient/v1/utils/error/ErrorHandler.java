@@ -1,6 +1,6 @@
 package com.project.sharedfolderclient.v1.utils.error;
 
-import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
+import com.project.sharedfolderclient.v1.events.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.gui.MainFrame;
 import lombok.RequiredArgsConstructor;
