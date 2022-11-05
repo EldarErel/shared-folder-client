@@ -4,7 +4,7 @@ import com.project.sharedfolderclient.v1.utils.error.Error;
 import org.springframework.context.ApplicationEvent;
 
 
-public class ApplicationEvents {
+public class ApplicationErrorEvents {
 
      public static class BaseErrorEvent extends ApplicationEvent {
         public BaseErrorEvent(BaseError error) {

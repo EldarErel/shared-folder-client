@@ -3,7 +3,7 @@ package com.project.sharedfolderclient.v1.sharedfolder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.project.sharedfolderclient.TestUtils;
-import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
+import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
@@ -62,7 +62,7 @@ class SharedFolderServiceTest {
     @MockBean
     private HttpClient httpClient;
     @Captor
-    private ArgumentCaptor<ApplicationEvents.BaseErrorEvent> eventArgumentCaptor;
+    private ArgumentCaptor<ApplicationErrorEvents.BaseErrorEvent> eventArgumentCaptor;
     @MockBean
     private TestErrorEventListener testListener;
 
@@ -286,7 +286,7 @@ class SharedFolderServiceTest {
     @TestComponent
     private static class TestErrorEventListener {
         @EventListener
-        public void errorEvent(ApplicationEvents.BaseErrorEvent errorEvent) {
+        public void errorEvent(ApplicationErrorEvents.BaseErrorEvent errorEvent) {
         }
 
 

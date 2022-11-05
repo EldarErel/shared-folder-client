@@ -1,7 +1,7 @@
 package com.project.sharedfolderclient.v1.sharedfolder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
+import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
@@ -30,6 +30,12 @@ public class SharedFolderService {
     private final ApplicationEventPublisher eventBus;
     private final ServerUtil serverUtils;
 
+    /**
+     * retrieve list of files
+     * @return list of files
+     *
+     * On Exception - application event will be sent
+     */
     public List<SharedFile> list() {
         log.debug("");
         try {
@@ -44,11 +50,19 @@ public class SharedFolderService {
             return files;
         } catch (Exception e) {
             log.error("Could not retrieve the file list: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new CouldNotGetFileListError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new CouldNotGetFileListError(e.getMessage())));
         }
         return null;
     }
 
+    /**
+     * download file from the shared folder
+     * @param fileName - the name od the file
+     * @param downloadPath - the download path
+     * @return - the file object associate with this file
+     *
+     * On Exception - application event will be sent
+     */
     public SharedFile download(String fileName, String downloadPath) {
         log.debug("Downloading {} to {}", fileName, downloadPath);
         try {
@@ -67,11 +81,18 @@ public class SharedFolderService {
             return downloadedFile;
         } catch (Exception e) {
             log.error("Could not download file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
         }
         return null;
     }
 
+    /**
+     *  upload file to the shared folder server
+     * @param fileToUpload - the file object to upload
+     * @return - the file object associate with the uploaded file\
+     *
+     * On Exception - application event will be sent
+     */
     public SharedFile upload(File fileToUpload) {
         try {
             log.debug("Uploading file: {}", fileToUpload);
@@ -97,11 +118,19 @@ public class SharedFolderService {
             return responseBody.getData();
         } catch (Exception e) {
             log.error("Could not upload file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
         }
         return null;
     }
 
+    /**
+     * rename a file
+     * @param currentFileName - the file name to rename
+     * @param newFileName - the name file name for that file
+     * @return - the file object associate with the updated file
+     *
+     * On Exception - application event will be sent
+     */
     public SharedFile rename(String currentFileName, String newFileName) {
         log.debug("Renaming file name from [{}] to [{}]", currentFileName, newFileName);
         try {
@@ -118,11 +147,18 @@ public class SharedFolderService {
             return responseBody.getData();
         } catch (Exception e) {
             log.error("Could not edit file: {}", e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileCouldNotBeRenamedError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileCouldNotBeRenamedError(e.getMessage())));
         }
         return null;
     }
 
+    /**
+     * delete file from the shares folder by his name
+     * @param fileName - the file name
+     * @return - true of the file was deleted, false otherwise
+     *
+     * On Exception - application event will be sent
+     */
     public boolean deleteByName(String fileName) {
         log.info("Deleting [{}] from the shared folder", fileName);
         try {
@@ -134,7 +170,7 @@ public class SharedFolderService {
             return true;
         } catch (Exception e) {
             log.error("Could not delete file {} : {}", fileName, e.getMessage());
-            eventBus.publishEvent(new ApplicationEvents.BaseErrorEvent(new FileCouldNotBeDeletedError(e.getMessage())));
+            eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileCouldNotBeDeletedError(e.getMessage())));
         }
         return false;
     }

@@ -1,15 +1,11 @@
 package com.project.sharedfolderclient.v1.gui;
 
-import com.project.sharedfolderclient.v1.exception.ApplicationEvents;
-import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
-import com.project.sharedfolderclient.v1.utils.error.Error;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -65,6 +61,25 @@ public class MainFrame extends JFrame  {
         refreshView();
     }
 
+    /**
+     *  print messages to status bar in red color
+     */
+    public void printError(String message) {
+        console.setForeground(Color.RED);
+        console.setText(message);
+    }
+
+    /**
+     *  print messages to status bar in blue color
+     */
+    public void printSuccess(String message) {
+        console.setForeground(Color.BLUE);
+        console.setText(message);
+    }
+
+
+    /* helpers methods */
+
     private JButton createRefreshButton() {
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(evt -> {
@@ -105,16 +120,6 @@ public class MainFrame extends JFrame  {
             }
         });
         return uploadButton;
-    }
-
-    private void printError(String message) {
-        console.setForeground(Color.RED);
-        console.setText(message);
-    }
-
-    private void printSuccess(String message) {
-        console.setForeground(Color.BLUE);
-        console.setText(message);
     }
 
     private JTable createTableView() {
@@ -163,6 +168,8 @@ public class MainFrame extends JFrame  {
         return fileTable;
     }
 
+
+    /* Pop up menu for mouse right click */
     private JPopupMenu createRightClickMenu(JTable fileTable) {
         JPopupMenu rightClickPopupMenu = new JPopupMenu();
         JMenuItem deleteItem = new JMenuItem("Delete");
@@ -228,6 +235,9 @@ public class MainFrame extends JFrame  {
         return rightClickPopupMenu;
     }
 
+    /*  call the remote server and retrieving the latest file list
+        shows it in the main frame
+    * */
     private void refreshView() {
         List<SharedFile> fileList = sharedFolderService.list();
         fileModel.setRowCount(0);
@@ -240,18 +250,6 @@ public class MainFrame extends JFrame  {
             fileModel.addRow(fileRow);
         });
         printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
-    }
-
-    @EventListener
-    public void errorHandler(ApplicationEvents.BaseErrorEvent errorEvent) {
-        BaseError error = (BaseError) errorEvent.getSource();
-        printError(error.getMessage());
-    }
-
-    @EventListener
-    public void errorHandler(ApplicationEvents.ErrorEvent errorEvent) {
-        Error error = (Error) errorEvent.getSource();
-        printError(error.getMessage());
     }
 }
 
