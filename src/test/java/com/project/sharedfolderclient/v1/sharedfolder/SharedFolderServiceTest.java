@@ -7,7 +7,6 @@ import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
-import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileListError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
@@ -18,6 +17,11 @@ import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -35,9 +40,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,10 +59,8 @@ class SharedFolderServiceTest {
     private TestUtils.CaseObject caseObject;
     @Autowired
     private SharedFolderService sharedFolderService;
-    @Autowired
+    @SpyBean
     private ServerUtil serverUtil;
-    @MockBean
-    private HttpClient httpClient;
     @Captor
     private ArgumentCaptor<ApplicationErrorEvents.BaseErrorEvent> eventArgumentCaptor;
     @MockBean
@@ -76,30 +76,25 @@ class SharedFolderServiceTest {
         caseObject = null;
     }
 
-
     @Nested
     class Edit {
         @Nested
         class Rename {
             @Test
             @DisplayName("Success: rename file")
-            void successRenameFile() throws IOException, InterruptedException {
+            void successRenameFile() throws IOException {
                 caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-rename-file");
                 String currentFileName = caseObject.getPreRequest().get("data").get(0).get("name").asText();
-                HttpResponse<String> createResponse =  TestUtils.createHttpResponse(caseObject.getPreRequest());
-                Mockito.doReturn(createResponse).when(httpClient).send(
-                        RestUtils.createGetRequest(serverUtil.getApiPath()),
-                        HttpResponse.BodyHandlers.ofString());
                 SharedFile updatedFile = JSON.objectMapper.convertValue(caseObject.getRequest(), new TypeReference<>() {
                 });
+                HttpResponse createResponse =  TestUtils.createHttpResponse(caseObject.getPreRequest());
+                Mockito.doReturn(createResponse).when(serverUtil).exchange(any(HttpGet.class));
                 JsonNode expectedResultAsJson = caseObject.getResponse();
                 JsonNode data = expectedResultAsJson.get("data");
                 SharedFile expectedResult = JSON.objectMapper.convertValue(data, new TypeReference<>() {
                 });
-                HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-                Mockito.doReturn(response).when(httpClient).send(
-                        RestUtils.createPutRequest(serverUtil.getApiPath() + updatedFile.getId(), updatedFile),
-                        HttpResponse.BodyHandlers.ofString());
+                HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+                Mockito.doReturn(response).when(serverUtil).exchange(any(HttpPut.class));
                 sharedFolderService.list();
 
                 SharedFile actualResult = sharedFolderService.rename(currentFileName, updatedFile.getName());
@@ -121,10 +116,9 @@ class SharedFolderServiceTest {
             JsonNode data = expectedResultAsJson.get("data");
             List<SharedFile> expectedResult = JSON.objectMapper.convertValue(data, new TypeReference<>() {
             });
-            HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-            Mockito.doReturn(response).when(httpClient).send(
-                    any(HttpRequest.class),
-                    any());
+            HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+            Mockito.doReturn(response).when(serverUtil).exchange(
+                    any(HttpGet.class));
 
             List<SharedFile> actualResult = sharedFolderService.list();
 
@@ -134,8 +128,10 @@ class SharedFolderServiceTest {
 
         @Test
         @DisplayName("Fail: connection refused")
-        void FailConnectionRefused() {
+        void FailConnectionRefused() throws IOException {
             BaseError expectedError = new CouldNotGetFileListError(new ServerConnectionError().getMessage());
+            Mockito.doReturn(null).when(serverUtil).exchange(
+                    any());
 
             List<SharedFile> actualResult = sharedFolderService.list();
 
@@ -159,21 +155,16 @@ class SharedFolderServiceTest {
             caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-download-file");
             JsonNode expectedResultAsJson = caseObject.getResponse();
             JsonNode data = expectedResultAsJson.get("data");
-            ContentFile expectedResult = JSON.objectMapper.convertValue(data, new TypeReference<>() {
-            });
-            HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-            Mockito.doReturn(response).when(httpClient).send(
-                    any(HttpRequest.class),
-                    any());
+            HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+            Mockito.doReturn(response).when(serverUtil).exchange(
+                    any(HttpGet.class));
             when(serverUtil.exchange(RestUtils.createGetRequest(serverUtil.getApiPath())))
                     .thenReturn(TestUtils.createHttpResponse(new Response<>(caseObject.getPreRequest().get("data"))));
             sharedFolderService.list();
 
-            ContentFile actualResult = (ContentFile) sharedFolderService.download(testFileName, testFilePath);
+            boolean isDownloaded = sharedFolderService.download(testFileName, testFilePath);
 
-            assertNotNull(actualResult, "expect to have a file");
-            assertEquals(expectedResult, actualResult
-                    , () -> String.format("expect the same file, expected file: %s\n actual file: %s", expectedResult, actualResult));
+            assertTrue(isDownloaded, "file should be downloaded");
             File downloadedFile = new File(testFilePath + "/" + testFileName);
             assertTrue(downloadedFile.exists(), "File should be exists");
             assertTrue(downloadedFile.delete(), "File was not deleted");
@@ -184,7 +175,7 @@ class SharedFolderServiceTest {
     class Upload {
         @Test
         @DisplayName("Success: upload file")
-        void successUpload() throws IOException, InterruptedException {
+        void successUpload() throws IOException {
             String uploadFileCaseName = "success-upload-file";
             caseObject = TestUtils.generateCaseObject(CASE_PATH, uploadFileCaseName);
             File fileToUpload = new File(uploadFileCaseName);
@@ -196,10 +187,9 @@ class SharedFolderServiceTest {
                 JsonNode expectedResultAsJson = caseObject.getResponse();
                 SharedFile expectedResult = JSON.objectMapper.convertValue(caseObject.getResponse().get("data"), new TypeReference<>() {
                 });
-                HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-                Mockito.doReturn(response).when(httpClient).send(
-                        any(HttpRequest.class),
-                        any());
+                HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+                Mockito.doReturn(response).when(serverUtil).exchange(
+                        any(HttpPost.class));
 
                 SharedFile actualResult = sharedFolderService.upload(fileToUpload);
 
@@ -245,14 +235,15 @@ class SharedFolderServiceTest {
 
         @Test
         @DisplayName("Fail: file found but server not responding")
-        void failServerNotResponding() throws IOException, InterruptedException {
+        void failServerNotResponding() throws IOException {
             caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-get-list");
             JsonNode expectedResultAsJson = caseObject.getResponse();
             String existFileName = expectedResultAsJson.get("data").get(0).get("name").asText();
-            HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-            Mockito.doReturn(response).when(httpClient).send(
-                    RestUtils.createGetRequest(serverUtil.getApiPath()),
-                    HttpResponse.BodyHandlers.ofString());
+            HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+            Mockito.doReturn(response).when(serverUtil).exchange(
+                    any(HttpGet.class));
+            Mockito.doReturn(null).when(serverUtil).exchange(
+                    any(HttpDelete.class));
             sharedFolderService.list();
             BaseError expectedError = new ServerConnectionError();
 
@@ -267,14 +258,13 @@ class SharedFolderServiceTest {
 
         @Test
         @DisplayName("Success: delete file")
-        void successDelete() throws IOException, InterruptedException {
+        void successDelete() throws IOException {
             caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-get-list");
             JsonNode expectedResultAsJson = caseObject.getResponse();
             String existFileName = expectedResultAsJson.get("data").get(0).get("name").asText();
-            HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
-            Mockito.doReturn(response).when(httpClient).send(
-                    any(HttpRequest.class),
-                   any());
+            HttpResponse response = TestUtils.createHttpResponse(expectedResultAsJson);
+            Mockito.doReturn(response).when(serverUtil).exchange(
+                    any());
             sharedFolderService.list();
 
             boolean isDeleted = sharedFolderService.deleteByName(existFileName);
