@@ -68,7 +68,6 @@ public class MainFrame extends JFrame  {
     private JButton createRefreshButton() {
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(evt -> {
-                printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
                 refreshView();
                 });
         return refreshButton;
@@ -240,6 +239,7 @@ public class MainFrame extends JFrame  {
             Object[] fileRow = {file.getName(), file.getKind(), file.getSize(), file.getDateAdded(), file.getDateModified()};
             fileModel.addRow(fileRow);
         });
+        printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
     }
 
     @EventListener
