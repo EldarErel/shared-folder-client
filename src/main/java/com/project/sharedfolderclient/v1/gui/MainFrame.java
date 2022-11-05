@@ -220,7 +220,8 @@ public class MainFrame extends JFrame  {
                     // set the label to the path of the selected file
                     String path = selectedFile.getAbsolutePath();
                     try {
-                        if (sharedFolderService.download(fileNameToDownload, path) == null) {
+                        printSuccess("Downloading the request file..");
+                        if (!sharedFolderService.download(fileNameToDownload, path)) {
                             return;
                         }
                         printSuccess("file " + fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0)

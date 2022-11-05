@@ -10,13 +10,20 @@ import com.project.sharedfolderclient.v1.utils.http.Response;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+
 import java.util.List;
 
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
@@ -29,48 +36,11 @@ public class ServerUtil {
     private final HttpClient client;
     private final ApplicationProperties appProperties;
 
-    public HttpResponse<String> exchange(HttpRequest request) throws IOException, InterruptedException {
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
     public String getApiPath() {
         return appProperties.getServer().getUrl() + appProperties.getServer().getApiPath();
     }
 
-    public void assertSuccessfulResponse(HttpResponse<String> response) throws JsonProcessingException {
-        if (response == null) {
-            log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
-            throw new ServerConnectionError();
-        }
-        if (!Constants.successCodeRange.contains(response.statusCode())) {
-            log.debug("status code is {} ", response.statusCode());
-            handleErrors(response);
-            return;
-        }
-        if (response.statusCode() == 204) {
-            // success with no content
-            return;
-        }
-        if (response.body() == null) {
-            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-        }
-        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
-        handleErrors(body);
 
-    }
-
-    private void handleErrors(HttpResponse<String> response) throws JsonProcessingException {
-        if (response.body() == null) {
-            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
-        }
-        Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
-        });
-        handleErrors(body);
-
-    }
     private void handleErrors(Response body) {
         List<Error> errorList = body.getErrors();
         if (!CollectionUtils.isEmpty(errorList)) {
@@ -81,5 +51,46 @@ public class ServerUtil {
             throw new ServerConnectionError(errorMessages);
         }
 
+    }
+
+    public HttpResponse exchange(HttpUriRequest requestEntity) throws IOException {
+        org.apache.http.client.HttpClient client = HttpClients.createDefault();
+       return client.execute(requestEntity);
+
+    }
+
+    public void assertSuccessfulResponse(HttpResponse restResponse) throws IOException {
+        if (restResponse == null) {
+            log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
+            throw new ServerConnectionError();
+        }
+        if (!Constants.successCodeRange.contains(restResponse.getStatusLine().getStatusCode())) {
+            log.debug("status code is {} ", restResponse.getStatusLine().getStatusCode());
+            handleErrors(restResponse);
+            return;
+        }
+        if (restResponse.getStatusLine().getStatusCode() == 204) {
+            // success with no content
+            return;
+        }
+        if (restResponse.getEntity() == null || restResponse.getEntity().getContent() == null) {
+            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+        }
+        if (restResponse.getStatusLine().getStatusCode() > 299) {
+            Response body = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
+            });
+            handleErrors(body);
+        }
+
+    }
+    private void handleErrors(HttpResponse restResponse) throws IOException {
+        if (restResponse == null || restResponse.getEntity() == null || restResponse.getEntity().getContent() == null) {
+            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+            throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+        }
+        Response body = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
+        });
+        handleErrors(body);
     }
 }
