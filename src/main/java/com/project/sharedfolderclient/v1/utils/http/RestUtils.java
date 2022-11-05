@@ -1,47 +1,46 @@
 package com.project.sharedfolderclient.v1.utils.http;
 
 import com.project.sharedfolderclient.v1.utils.json.JSON;
-import jdk.jfr.ContentType;
 import lombok.SneakyThrows;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.entity.EntityBuilder;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 
-import java.net.URI;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
+import java.io.File;
 
 public class RestUtils {
-    @SneakyThrows
-    public static HttpRequest createGetRequest(String url) {
-        return HttpRequest.newBuilder()
-                .uri(new URI(url))
-                .setHeader("Content-Type", "application/json")
-                .GET()
-                .build();
+
+    public static HttpGet createGetRequest(String url) {
+        return new HttpGet(url);
+
+    }
+
+    public static HttpDelete createDeleteRequest(String url) {
+       return new HttpDelete(url);
     }
 
     @SneakyThrows
-    public static HttpRequest createDeleteRequest(String url) {
-        return HttpRequest.newBuilder()
-                .uri(new URI(url))
-                .setHeader("Content-Type", "application/json")
-                .DELETE()
+    public static HttpPut createPutRequest(String url, Object object) {
+        HttpPut put =  new HttpPut(url);
+        HttpEntity entity = EntityBuilder.create().setText(JSON.objectMapper.writeValueAsString(object))
                 .build();
+        put.setEntity(entity);
+        return put;
     }
 
-    @SneakyThrows
-    public static HttpRequest createPutRequest(String url, Object object) {
-        return HttpRequest.newBuilder()
-                .uri(new URI(url))
-                .setHeader("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(JSON.objectMapper.writeValueAsString(object)))
-                .build();
-    }
-
-    @SneakyThrows
-    public static HttpRequest creatPostRequest(String url, Object object) {
-        return HttpRequest.newBuilder()
-                .uri(new URI(url))
-                .setHeader("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(JSON.objectMapper.writeValueAsString(object)))
-                .build();
-    }
+    public static HttpPost createPostRequest(String url, File fileToUpload) {
+        HttpPost post = new HttpPost(url);
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+        builder.addBinaryBody("file", fileToUpload, ContentType.DEFAULT_BINARY, fileToUpload.getName());
+        HttpEntity entity = builder.build();
+        post.setEntity(entity);
+        return post;
+        }
 }

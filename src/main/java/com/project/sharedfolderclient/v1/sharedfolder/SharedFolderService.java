@@ -12,14 +12,17 @@ import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,10 +42,10 @@ public class SharedFolderService {
     public List<SharedFile> list() {
         log.debug("");
         try {
-            HttpRequest request = RestUtils.createGetRequest(serverUtils.getApiPath());
-            HttpResponse<String> restResponse = serverUtils.exchange(request);
+            HttpGet request = RestUtils.createGetRequest(serverUtils.getApiPath());
+            HttpResponse restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<List<SharedFile>> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<List<SharedFile>> responseBody = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
             });
             List<SharedFile> files = responseBody.getData();
             log.debug("Received {} files", files.size());
@@ -63,27 +66,32 @@ public class SharedFolderService {
      *
      * On Exception - application event will be sent
      */
-    public SharedFile download(String fileName, String downloadPath) {
+    public boolean download(String fileName, String downloadPath) {
         log.debug("Downloading {} to {}", fileName, downloadPath);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<Boolean> future =  executorService.submit(()-> {
+            try {
+                String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
+                        .orElseThrow(()-> new FileNotExistsError(fileName));
+                HttpResponse restResponse = serverUtils.exchange(RestUtils.createGetRequest(requestUrl));
+                serverUtils.assertSuccessfulResponse(restResponse);
+                File file = FileUtils.createFile(String.format("%s/%s",downloadPath, fileName));
+                FileUtils.writeByteArrayToFile(file, restResponse.getEntity().getContent().readAllBytes());
+                log.info(String.format("File %s was successfully downloaded",fileName));
+                return true;
+            } catch (Exception e) {
+                log.error("Could not download file: {}", e.getMessage());
+                eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
+            }
+            return false;
+        });
         try {
-            String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
-                    .orElseThrow(()-> new FileNotExistsError(fileName));
-            HttpResponse<String> restResponse = serverUtils.exchange(RestUtils.createGetRequest(requestUrl));
-            serverUtils.assertSuccessfulResponse(restResponse);
-            Response<ContentFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
-            });
-            ContentFile downloadedFile = responseBody.getData();
-            byte[] fileAsBytes = downloadedFile.getContent();
-            log.debug("Saving file {} ", downloadedFile.getName());
-            File file = FileUtils.createFile(String.format("%s/%s",downloadPath, fileName));
-            FileUtils.writeByteArrayToFile(file, fileAsBytes);
-            log.info(String.format("File %s was successfully downloaded",fileName));
-            return downloadedFile;
+            return future.get();
         } catch (Exception e) {
             log.error("Could not download file: {}", e.getMessage());
             eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileDownloadError(e.getMessage())));
         }
-        return null;
+        return false;
     }
 
     /**
@@ -105,17 +113,23 @@ public class SharedFolderService {
                 log.error("Trying to Upload un exist file: {} ", filename);
                 throw new FileNotExistsError(filename);
             }
-            byte[] data = FileCopyUtils.copyToByteArray(fileToUpload);
-            SharedFile file = new ContentFile()
-                    .setContent(data)
-                    .setName(filename);
-            HttpRequest request = RestUtils.creatPostRequest(serverUtils.getApiPath(), file);
-            HttpResponse<String> restResponse = serverUtils.exchange(request);
-            serverUtils.assertSuccessfulResponse(restResponse);
-            Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            Future<SharedFile> future =  executorService.submit(()-> {
+                try {
+                    HttpPost requestEntity = RestUtils.createPostRequest(serverUtils.getApiPath(), fileToUpload);
+                    org.apache.http.HttpResponse restResponse = serverUtils.exchange(requestEntity);
+                    serverUtils.assertSuccessfulResponse(restResponse);
+                    Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
+                    });
+                    log.info(String.format("File %s was successfully uploaded",filename));
+                    return responseBody.getData();
+                } catch (Exception e) {
+                    log.error("Could not upload file: {}", e.getMessage());
+                    eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
+                }
+                return null;
             });
-            log.info(String.format("File %s was successfully uploaded",filename));
-            return responseBody.getData();
+            return future.get();
         } catch (Exception e) {
             log.error("Could not upload file: {}", e.getMessage());
             eventBus.publishEvent(new ApplicationErrorEvents.BaseErrorEvent(new FileUploadError(e.getMessage())));
@@ -139,10 +153,10 @@ public class SharedFolderService {
             SharedFile updatedFile = new SharedFile()
                     .setId(fileId)
                     .setName(newFileName);
-            HttpRequest request = RestUtils.createPutRequest(serverUtils.getApiPath() + fileId, updatedFile);
-            HttpResponse<String> restResponse = serverUtils.exchange(request);
+            HttpPut request = RestUtils.createPutRequest(serverUtils.getApiPath() + fileId, updatedFile);
+            org.apache.http.HttpResponse restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.getEntity().getContent(), new TypeReference<>() {
             });
             return responseBody.getData();
         } catch (Exception e) {
@@ -164,7 +178,7 @@ public class SharedFolderService {
         try {
             UUID fileId = convertNameToId(fileName)
                     .orElseThrow(() -> new FileNotExistsError(fileName));
-            HttpResponse<String> restResponse = serverUtils.exchange(RestUtils.createDeleteRequest(serverUtils.getApiPath() + fileId));
+            HttpResponse restResponse = serverUtils.exchange(RestUtils.createDeleteRequest(serverUtils.getApiPath() + fileId));
             serverUtils.assertSuccessfulResponse(restResponse);
             fileNamesToIdMap.remove(fileName);
             return true;

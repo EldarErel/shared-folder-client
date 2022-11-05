@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Accessors(chain = true)
-public class SharedFile {
+public class SharedFile implements Serializable {
     private UUID id;
     private String name;
     private String size;
