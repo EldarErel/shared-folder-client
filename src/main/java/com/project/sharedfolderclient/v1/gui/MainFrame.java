@@ -114,8 +114,8 @@ public class MainFrame extends JFrame  {
                 if (sharedFolderService.upload(fileToUpload) == null) {
                     return;
                 }
-                printSuccess("File successfully uploaded");
                 refreshView();
+                printSuccess(String.format("File %s successfully uploaded",fileToUpload.getName()));
 
             }
         });
