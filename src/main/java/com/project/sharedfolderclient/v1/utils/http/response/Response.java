@@ -1,4 +1,4 @@
-package com.project.sharedfolderclient.v1.utils.http;
+package com.project.sharedfolderclient.v1.utils.http.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.project.sharedfolderclient.v1.utils.error.Error;
@@ -12,6 +12,9 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+/**
+ * Response object
+ */
 public class Response<T> {
 
     private T data;

@@ -6,10 +6,12 @@ import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.utils.ApplicationProperties;
 import com.project.sharedfolderclient.v1.utils.Constants;
 import com.project.sharedfolderclient.v1.utils.error.Error;
-import com.project.sharedfolderclient.v1.utils.http.Response;
+import com.project.sharedfolderclient.v1.utils.http.context.Context;
+import com.project.sharedfolderclient.v1.utils.http.response.Response;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -18,8 +20,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Map;
 
 import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
+import static com.project.sharedfolderclient.v1.utils.http.context.Context.REQUEST_ID_HEADER;
 import static java.util.stream.Collectors.joining;
 
 @Service
@@ -28,10 +32,13 @@ import static java.util.stream.Collectors.joining;
 public class ServerUtil {
     private final HttpClient client;
     private final ApplicationProperties appProperties;
+    private final Context context;
 
     public HttpResponse<String> exchange(HttpRequest request) throws IOException, InterruptedException {
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpRequest modifiedHttpRequest = addContextToRequest(request);
+        return client.send(modifiedHttpRequest, HttpResponse.BodyHandlers.ofString());
     }
+
 
     public String getApiPath() {
         return appProperties.getServer().getUrl() + appProperties.getServer().getApiPath();
@@ -81,5 +88,16 @@ public class ServerUtil {
             throw new ServerConnectionError(errorMessages);
         }
 
+    }
+
+    private HttpRequest addContextToRequest(HttpRequest request) {
+        HttpRequest.Builder builder =   HttpRequest.newBuilder(request.uri())
+                .method(request.method(), request.bodyPublisher().orElse(HttpRequest.BodyPublishers.ofString(StringUtils.EMPTY)));
+        for (Map.Entry<String, List<String>> header : request.headers().map().entrySet()) {
+            builder.setHeader(header.getKey(),header.getValue().stream().findFirst().orElse(StringUtils.EMPTY));
+            log.debug("Adding requestId header");
+            builder.setHeader(REQUEST_ID_HEADER,context.getRequestId());
+        }
+        return builder.build();
     }
 }

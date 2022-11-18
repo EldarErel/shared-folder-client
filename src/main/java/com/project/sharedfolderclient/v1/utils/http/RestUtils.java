@@ -1,11 +1,9 @@
 package com.project.sharedfolderclient.v1.utils.http;
 
 import com.project.sharedfolderclient.v1.utils.json.JSON;
-import jdk.jfr.ContentType;
 import lombok.SneakyThrows;
 
 import java.net.URI;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 
 public class RestUtils {

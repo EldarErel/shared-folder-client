@@ -2,6 +2,7 @@ package com.project.sharedfolderclient.v1.gui;
 
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
+import com.project.sharedfolderclient.v1.utils.http.context.Context;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,9 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+/**
+ * Application gui class
+ */
 public class MainFrame extends JFrame  {
     private DefaultTableModel fileModel;
     private final JLabel console = new JLabel("");
@@ -32,6 +36,8 @@ public class MainFrame extends JFrame  {
             true, false, false, false, false
     };
     private final SharedFolderService sharedFolderService;
+
+    private final Context context;
 
     /**
      * Create the frame.
@@ -90,12 +96,9 @@ public class MainFrame extends JFrame  {
     private DefaultTableModel createTableModel() {
         return new DefaultTableModel() {
             final boolean[] canEdit = editableCells;
-
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit[columnIndex];
             }
-
-
         };
     }
 

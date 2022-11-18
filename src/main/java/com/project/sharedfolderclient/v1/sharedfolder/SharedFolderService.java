@@ -7,7 +7,9 @@ import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
 import com.project.sharedfolderclient.v1.sharedfile.exception.*;
 import com.project.sharedfolderclient.v1.utils.FileUtils;
-import com.project.sharedfolderclient.v1.utils.http.Response;
+import com.project.sharedfolderclient.v1.utils.http.context.Context;
+import com.project.sharedfolderclient.v1.utils.http.context.ContextEnabled;
+import com.project.sharedfolderclient.v1.utils.http.response.Response;
 import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +32,15 @@ public class SharedFolderService {
     private final ApplicationEventPublisher eventBus;
     private final ServerUtil serverUtils;
 
+    private final Context context;
+
     /**
      * retrieve list of files
      * @return list of files
      *
      * On Exception - application event will be sent
      */
+    @ContextEnabled
     public List<SharedFile> list() {
         log.debug("");
         try {
@@ -63,6 +68,7 @@ public class SharedFolderService {
      *
      * On Exception - application event will be sent
      */
+    @ContextEnabled
     public SharedFile download(String fileName, String downloadPath) {
         log.debug("Downloading {} to {}", fileName, downloadPath);
         try {
@@ -93,6 +99,7 @@ public class SharedFolderService {
      *
      * On Exception - application event will be sent
      */
+    @ContextEnabled
     public SharedFile upload(File fileToUpload) {
         try {
             log.debug("Uploading file: {}", fileToUpload);
@@ -131,6 +138,7 @@ public class SharedFolderService {
      *
      * On Exception - application event will be sent
      */
+    @ContextEnabled
     public SharedFile rename(String currentFileName, String newFileName) {
         log.debug("Renaming file name from [{}] to [{}]", currentFileName, newFileName);
         try {
@@ -159,6 +167,7 @@ public class SharedFolderService {
      *
      * On Exception - application event will be sent
      */
+    @ContextEnabled
     public boolean deleteByName(String fileName) {
         log.info("Deleting [{}] from the shared folder", fileName);
         try {

@@ -13,7 +13,7 @@ import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileLis
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileNotExistsError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileUploadError;
-import com.project.sharedfolderclient.v1.utils.http.Response;
+import com.project.sharedfolderclient.v1.utils.http.response.Response;
 import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.extern.slf4j.Slf4j;
