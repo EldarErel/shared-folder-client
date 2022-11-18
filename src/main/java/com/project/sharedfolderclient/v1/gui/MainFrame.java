@@ -244,7 +244,7 @@ public class MainFrame extends JFrame  {
         if (CollectionUtils.isEmpty(fileList)) {
             return;
         }
-        sharedFolderService.list()
+        fileList
                 .forEach(file-> {
             Object[] fileRow = {file.getName(), file.getKind(), file.getSize(), file.getDateAdded(), file.getDateModified()};
             fileModel.addRow(fileRow);
