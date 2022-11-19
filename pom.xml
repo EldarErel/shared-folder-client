@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.project</groupId>
-    <artifactId>sharedfolderclient</artifactId>
+    <artifactId>shared-folder-client</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>sharedfolderclient</name>
+    <name>shared-folder-client</name>
     <description>shared folder client</description>
     <properties>
         <java.version>11</java.version>
