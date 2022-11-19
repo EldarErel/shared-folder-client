@@ -33,6 +33,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Profile("!test")
 public class MainFrame extends JFrame  {
     private final static Object[] columnNames = {"File name", "Kind", "Size", "Added At", "Last Modified"};
     private final static boolean[] editableCells = new boolean[]{
@@ -51,11 +52,6 @@ public class MainFrame extends JFrame  {
      */
     @PostConstruct
     public void init() {
-        // if in test mode don't create the frame
-        if (env.acceptsProfiles(Profiles.of("test"))) {
-            log.info("In Test Profile - building of GUI is disabled");
-            return;
-        }
         log.info("Starting application");
         setTitle("Shared Folder");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

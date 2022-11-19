@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.project.sharedfolderclient.v1.TestUtils;
 import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
+import com.project.sharedfolderclient.v1.gui.MainFrame;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.file.exception.CouldNotGetFileListError;
 import com.project.sharedfolderclient.v1.file.exception.FileCouldNotBeDeletedError;
@@ -53,15 +54,14 @@ class FileServiceTest {
     private FileService fileService;
     @MockBean
     private HttpClient httpClient;
+
+    @MockBean
+    private MainFrame mainFrame;
     @Captor
     private ArgumentCaptor<ApplicationErrorEvents.BaseErrorEvent> eventArgumentCaptor;
     @MockBean
     private TestErrorEventListener testListener;
 
-    @BeforeAll
-    public static void setUpHeadlessMode() {
-        System.setProperty("java.awt.headless", "false");
-    }
     @BeforeEach
     void cleanUp() {
         caseObject = null;
