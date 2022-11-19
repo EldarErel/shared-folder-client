@@ -2,14 +2,17 @@ package com.project.sharedfolderclient.v1.gui;
 
 import com.project.sharedfolderclient.v1.file.FileDto;
 import com.project.sharedfolderclient.v1.file.FileService;
-import com.project.sharedfolderclient.v1.utils.http.context.Context;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
@@ -22,12 +25,12 @@ import java.io.File;
 import java.util.Date;
 import java.util.List;
 
-@Component
-@Slf4j
-@RequiredArgsConstructor
 /**
  * Application gui class
  */
+@Component
+@Slf4j
+@RequiredArgsConstructor
 public class MainFrame extends JFrame  {
     private DefaultTableModel fileModel;
     private final JLabel console = new JLabel("");
@@ -37,11 +40,12 @@ public class MainFrame extends JFrame  {
     };
     private final FileService fileService;
 
-    private final Context context;
 
     /**
      * Create the frame.
      */
+    @PostConstruct
+    @Profile("!test") // if in test mode don't create the frame
     public void init() {
         log.info("Starting application");
         setTitle("Shared Folder");
@@ -63,8 +67,7 @@ public class MainFrame extends JFrame  {
         southButtons.add(createRefreshButton());
         contentPane.add(southButtons, BorderLayout.SOUTH);
         contentPane.add(console, BorderLayout.NORTH);
-        log.debug("Retrieving list of files");
-        refreshView();
+        log.debug("Done settings up the main frame");
     }
 
     /**
@@ -88,9 +91,7 @@ public class MainFrame extends JFrame  {
 
     private JButton createRefreshButton() {
         JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(evt -> {
-                refreshView();
-                });
+        refreshButton.addActionListener(evt -> refreshView());
         return refreshButton;
     }
     private DefaultTableModel createTableModel() {
@@ -238,9 +239,10 @@ public class MainFrame extends JFrame  {
         return rightClickPopupMenu;
     }
 
-    /*  call the remote server and retrieving the latest file list
-        shows it in the main frame
-    * */
+    /**
+     *  call the remote server and retrieving the latest file list
+     *  shows it in the main frame
+    **/
     private void refreshView() {
         List<FileDto> fileList = fileService.list();
         fileModel.setRowCount(0);
@@ -253,6 +255,15 @@ public class MainFrame extends JFrame  {
             fileModel.addRow(fileRow);
         });
         printSuccess("File list updated at: " + new Date(System.currentTimeMillis()));
+    }
+
+    /**
+     * when application ready,
+     * making a request to get the file list and refreshing the view
+     */
+    @EventListener(ApplicationStartedEvent.class)
+    public void onApplicationStart() {
+        refreshView();
     }
 }
 
