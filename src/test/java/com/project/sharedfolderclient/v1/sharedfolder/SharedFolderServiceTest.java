@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.project.sharedfolderclient.TestUtils;
 import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
-import com.project.sharedfolderclient.v1.server.ServerUtil;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
 import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
 import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
@@ -13,8 +12,6 @@ import com.project.sharedfolderclient.v1.sharedfile.exception.CouldNotGetFileLis
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileCouldNotBeDeletedError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileNotExistsError;
 import com.project.sharedfolderclient.v1.sharedfile.exception.FileUploadError;
-import com.project.sharedfolderclient.v1.utils.http.response.Response;
-import com.project.sharedfolderclient.v1.utils.http.RestUtils;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -45,7 +42,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -57,8 +53,6 @@ class SharedFolderServiceTest {
     private TestUtils.CaseObject caseObject;
     @Autowired
     private SharedFolderService sharedFolderService;
-    @Autowired
-    private ServerUtil serverUtil;
     @MockBean
     private HttpClient httpClient;
     @Captor
@@ -87,9 +81,8 @@ class SharedFolderServiceTest {
                 caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-rename-file");
                 String currentFileName = caseObject.getPreRequest().get("data").get(0).get("name").asText();
                 HttpResponse<String> createResponse =  TestUtils.createHttpResponse(caseObject.getPreRequest());
-                Mockito.doReturn(createResponse).when(httpClient).send(
-                        RestUtils.createGetRequest(serverUtil.getApiPath()),
-                        HttpResponse.BodyHandlers.ofString());
+                Mockito.doReturn(createResponse).when(httpClient).send(any(), any());
+                sharedFolderService.list();
                 SharedFile updatedFile = JSON.objectMapper.convertValue(caseObject.getRequest(), new TypeReference<>() {
                 });
                 JsonNode expectedResultAsJson = caseObject.getResponse();
@@ -98,9 +91,8 @@ class SharedFolderServiceTest {
                 });
                 HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
                 Mockito.doReturn(response).when(httpClient).send(
-                        RestUtils.createPutRequest(serverUtil.getApiPath() + updatedFile.getId(), updatedFile),
-                        HttpResponse.BodyHandlers.ofString());
-                sharedFolderService.list();
+                        any(),
+                        any());
 
                 SharedFile actualResult = sharedFolderService.rename(currentFileName, updatedFile.getName());
 
@@ -153,10 +145,15 @@ class SharedFolderServiceTest {
         @Test
         @DisplayName("Success: download file")
         void successDownloadFile() throws IOException, InterruptedException {
+            caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-download-file");
             String testFileName = "test.pdf";
             Resource resource = new ClassPathResource("downloadLocation");
             String testFilePath = resource.getURI().getPath();
-            caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-download-file");
+            Mockito.doReturn(TestUtils.createHttpResponse(caseObject.getPreRequest().get("data"))).when(httpClient).send(
+                    any(HttpRequest.class),
+                    any());
+            sharedFolderService.list();
+            Mockito.reset(httpClient);
             JsonNode expectedResultAsJson = caseObject.getResponse();
             JsonNode data = expectedResultAsJson.get("data");
             ContentFile expectedResult = JSON.objectMapper.convertValue(data, new TypeReference<>() {
@@ -165,9 +162,6 @@ class SharedFolderServiceTest {
             Mockito.doReturn(response).when(httpClient).send(
                     any(HttpRequest.class),
                     any());
-            when(serverUtil.exchange(RestUtils.createGetRequest(serverUtil.getApiPath())))
-                    .thenReturn(TestUtils.createHttpResponse(caseObject.getPreRequest().get("data")));
-            sharedFolderService.list();
 
             ContentFile actualResult = (ContentFile) sharedFolderService.download(testFileName, testFilePath);
 
@@ -252,7 +246,7 @@ class SharedFolderServiceTest {
             HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
             Mockito.doReturn(response).when(httpClient).send(
                     any(HttpRequest.class),
-                    any(HttpResponse.BodyHandler.class));
+                    any());
             sharedFolderService.list();
             Mockito.reset(httpClient);
             BaseError expectedError = new ServerConnectionError();
