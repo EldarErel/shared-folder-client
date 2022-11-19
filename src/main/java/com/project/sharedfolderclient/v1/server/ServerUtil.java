@@ -10,6 +10,7 @@ import com.project.sharedfolderclient.v1.utils.http.context.Context;
 import com.project.sharedfolderclient.v1.utils.http.response.Response;
 import com.project.sharedfolderclient.v1.utils.json.JSON;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -38,9 +39,14 @@ public class ServerUtil {
     private final ApplicationProperties appProperties;
     private final Context context;
 
-    public HttpResponse<String> exchange(HttpRequest request) throws IOException, InterruptedException {
+    public HttpResponse<String> exchange(HttpRequest request)  {
         HttpRequest modifiedHttpRequest = addContextToRequest(request);
-        return client.send(modifiedHttpRequest, HttpResponse.BodyHandlers.ofString());
+        try {
+            return client.send(modifiedHttpRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            log.warn("Could not complete the request: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -56,7 +62,8 @@ public class ServerUtil {
      * @param response - the response object
      * @throws JsonProcessingException - if cannot deserialize the response object
      */
-    public void assertSuccessfulResponse(HttpResponse<String> response) throws JsonProcessingException {
+    @SneakyThrows
+    public void assertSuccessfulResponse(HttpResponse<String> response) {
         if (response == null) {
             log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
             throw new ServerConnectionError();
