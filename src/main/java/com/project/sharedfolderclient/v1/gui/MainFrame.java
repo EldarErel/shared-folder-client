@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -36,17 +38,24 @@ public class MainFrame extends JFrame  {
     private final static boolean[] editableCells = new boolean[]{
             true, false, false, false, false
     };
+    private final static JLabel console = new JLabel("");
     private final FileService fileService;
 
-    private DefaultTableModel fileModel;
-    private JLabel console;
+    private final Environment env;
+    private DefaultTableModel fileModel = new DefaultTableModel();
+
+
 
     /**
      * Create the frame.
      */
     @PostConstruct
-    @Profile("!test") // if in test mode don't create the frame
     public void init() {
+        // if in test mode don't create the frame
+        if (env.acceptsProfiles(Profiles.of("test"))) {
+            log.info("In Test Profile - building of GUI is disabled");
+            return;
+        }
         log.info("Starting application");
         setTitle("Shared Folder");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -66,7 +75,6 @@ public class MainFrame extends JFrame  {
         southButtons.add(createUploadButton());
         southButtons.add(createRefreshButton());
         contentPane.add(southButtons, BorderLayout.SOUTH);
-        console = new JLabel("");
         contentPane.add(console, BorderLayout.NORTH);
 
         log.debug("Done settings up the main frame");

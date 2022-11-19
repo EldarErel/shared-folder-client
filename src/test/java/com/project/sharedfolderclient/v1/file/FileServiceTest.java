@@ -2,7 +2,7 @@ package com.project.sharedfolderclient.v1.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.project.sharedfolderclient.TestUtils;
+import com.project.sharedfolderclient.v1.TestUtils;
 import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.exception.BaseError;
 import com.project.sharedfolderclient.v1.server.exception.ServerConnectionError;
@@ -62,7 +62,6 @@ class FileServiceTest {
     public static void setUpHeadlessMode() {
         System.setProperty("java.awt.headless", "false");
     }
-
     @BeforeEach
     void cleanUp() {
         caseObject = null;

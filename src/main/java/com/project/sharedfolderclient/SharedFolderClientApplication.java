@@ -25,6 +25,7 @@ public class SharedFolderClientApplication {
     private static void displayMainFrame(ConfigurableApplicationContext context) {
         SwingUtilities.invokeLater(() -> {
             MainFrame mainFrameController = context.getBean(MainFrame.class);
+            mainFrameController.init();
             mainFrameController.setVisible(true);
         });
     }

@@ -1,4 +1,4 @@
-package com.project.sharedfolderclient;
+package com.project.sharedfolderclient.v1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
