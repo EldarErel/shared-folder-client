@@ -8,4 +8,4 @@ logging:
     root: error
     com:
       project:
-        sharedfolderclient: ${LOG_LEVEL:DEBUG}
+        sharedfolderclient: ${LOG_LEVEL:INFO}
