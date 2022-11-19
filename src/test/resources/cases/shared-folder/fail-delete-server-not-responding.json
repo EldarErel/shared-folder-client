@@ -1,0 +1,19 @@
+{
+  "preRequest": {
+  },
+  "request": null,
+  "response": {
+    "data": [
+      {
+        "id": "506870a4-3117-11ed-a261-0242ac120002",
+        "name": "fileOne",
+        "size": "458754378",
+        "kind": "PDF",
+        "dateAdded": "1436224954.000000000",
+        "dateModified": "1436224954.000000000"
+      }
+    ],
+    "errors": [
+    ]
+  }
+}
