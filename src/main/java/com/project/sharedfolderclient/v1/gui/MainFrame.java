@@ -32,14 +32,14 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class MainFrame extends JFrame  {
-    private DefaultTableModel fileModel;
-    private final JLabel console = new JLabel("");
     private final static Object[] columnNames = {"File name", "Kind", "Size", "Added At", "Last Modified"};
     private final static boolean[] editableCells = new boolean[]{
             true, false, false, false, false
     };
     private final FileService fileService;
 
+    private DefaultTableModel fileModel;
+    private JLabel console;
 
     /**
      * Create the frame.
@@ -66,7 +66,9 @@ public class MainFrame extends JFrame  {
         southButtons.add(createUploadButton());
         southButtons.add(createRefreshButton());
         contentPane.add(southButtons, BorderLayout.SOUTH);
+        console = new JLabel("");
         contentPane.add(console, BorderLayout.NORTH);
+
         log.debug("Done settings up the main frame");
     }
 
