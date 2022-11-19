@@ -9,8 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -41,9 +39,7 @@ public class MainFrame extends JFrame  {
     };
     private final static JLabel console = new JLabel("");
     private final FileService fileService;
-
-    private final Environment env;
-    private DefaultTableModel fileModel = new DefaultTableModel();
+    private DefaultTableModel fileModel;
 
 
 
