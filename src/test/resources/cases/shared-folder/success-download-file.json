@@ -2,16 +2,19 @@
   "preRequest": {
     "url": "http://dummy.url/1.0/files",
     "method": "POST",
-    "data": [
-      {
-        "id": "506870a4-3117-11ed-a261-0242ac120002",
-        "name": "test.pdf",
-        "size": "4",
-        "kind": "PDF",
-        "dateAdded": "1436224954.000000000",
-        "dateModified": "1436224954.000000000"
-      }
-    ]
+    "data": {
+      "data": [
+        {
+          "id": "506870a4-3117-11ed-a261-0242ac120002",
+          "name": "test.pdf",
+          "size": "4",
+          "kind": "PDF",
+          "dateAdded": "1436224954.000000000",
+          "dateModified": "1436224954.000000000"
+        }
+      ],
+      "errors": []
+    }
   },
   "request": null,
   "response": {

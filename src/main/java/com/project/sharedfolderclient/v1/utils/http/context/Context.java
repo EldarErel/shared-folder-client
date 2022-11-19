@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 /**
  * Class to manage application context
@@ -28,7 +30,7 @@ public class Context {
      * @return the request id , null of not exists in context
      */
     public String getRequestId() {
-       return MDC.get(REQUEST_ID);
+       return Optional.ofNullable(MDC.get(REQUEST_ID)).orElse(StringUtils.EMPTY);
     }
 
     /**

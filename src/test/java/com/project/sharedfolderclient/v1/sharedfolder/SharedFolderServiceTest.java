@@ -166,7 +166,7 @@ class SharedFolderServiceTest {
                     any(HttpRequest.class),
                     any());
             when(serverUtil.exchange(RestUtils.createGetRequest(serverUtil.getApiPath())))
-                    .thenReturn(TestUtils.createHttpResponse(new Response<>(caseObject.getPreRequest().get("data"))));
+                    .thenReturn(TestUtils.createHttpResponse(caseObject.getPreRequest().get("data")));
             sharedFolderService.list();
 
             ContentFile actualResult = (ContentFile) sharedFolderService.download(testFileName, testFilePath);
@@ -251,9 +251,10 @@ class SharedFolderServiceTest {
             String existFileName = expectedResultAsJson.get("data").get(0).get("name").asText();
             HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
             Mockito.doReturn(response).when(httpClient).send(
-                    RestUtils.createGetRequest(serverUtil.getApiPath()),
-                    HttpResponse.BodyHandlers.ofString());
+                    any(HttpRequest.class),
+                    any(HttpResponse.BodyHandler.class));
             sharedFolderService.list();
+            Mockito.reset(httpClient);
             BaseError expectedError = new ServerConnectionError();
 
             boolean isDeleted = sharedFolderService.deleteByName(existFileName);
