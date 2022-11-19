@@ -1,10 +1,21 @@
 # Shared Folder - University project
 
 ## Shared Folder Client
-Client to connect to the shared folder server <br>
+Client side of Shared Folder application <br>
+Used to connect to the shared folder server <br>
 java based application (swing with spring boot)
 
-### Running
-1. set environment variable SHARED_FOLDER_URL to the server url. default is: http://localhost:8080
-2. run java -jar sharedfolderclient-0.0.1-SNAPSHOT.jar from command line
+## Pre Installation
+Make sure you have JAVA 11 installed <br>
+run in termail ```java -version```
+to vlidate your java version 
 
+## Running
+run ```java -jar shared-folder-client.jar``` from command line
+
+
+## Environment Variable
+| Name                     | Description                                     | Default value                           |
+| :---:                    | :---:                                           | :---:                                   |
+| `LOG_LEVEL`              | Log level                                       | `INFO`                                  |
+| `SHARED_FOLDER_URL`      | Url of the shared folder server                 | `http://localhost:8080`                 |
