@@ -240,7 +240,7 @@ class SharedFolderServiceTest {
         @Test
         @DisplayName("Fail: file found but server not responding")
         void failServerNotResponding() throws IOException, InterruptedException {
-            caseObject = TestUtils.generateCaseObject(CASE_PATH, "success-get-list");
+            caseObject = TestUtils.generateCaseObject(CASE_PATH, "fail-delete-server-not-responding");
             JsonNode expectedResultAsJson = caseObject.getResponse();
             String existFileName = expectedResultAsJson.get("data").get(0).get("name").asText();
             HttpResponse<String> response = TestUtils.createHttpResponse(expectedResultAsJson);
