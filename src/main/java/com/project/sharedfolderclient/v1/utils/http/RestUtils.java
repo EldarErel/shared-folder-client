@@ -6,6 +6,9 @@ import lombok.SneakyThrows;
 import java.net.URI;
 import java.net.http.HttpRequest;
 
+/**
+ * Util class for rest operations
+ */
 public class RestUtils {
     @SneakyThrows
     public static HttpRequest createGetRequest(String url) {

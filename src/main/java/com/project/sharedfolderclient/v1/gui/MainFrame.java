@@ -1,7 +1,7 @@
 package com.project.sharedfolderclient.v1.gui;
 
-import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
-import com.project.sharedfolderclient.v1.sharedfolder.SharedFolderService;
+import com.project.sharedfolderclient.v1.file.FileDto;
+import com.project.sharedfolderclient.v1.file.FileService;
 import com.project.sharedfolderclient.v1.utils.http.context.Context;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -35,7 +35,7 @@ public class MainFrame extends JFrame  {
     private final static boolean[] editableCells = new boolean[]{
             true, false, false, false, false
     };
-    private final SharedFolderService sharedFolderService;
+    private final FileService fileService;
 
     private final Context context;
 
@@ -114,7 +114,7 @@ public class MainFrame extends JFrame  {
                 // set the label to the path of the selected file
                 String path = j.getSelectedFile().getAbsolutePath();
                 File fileToUpload = new File(path);
-                if (sharedFolderService.upload(fileToUpload) == null) {
+                if (fileService.upload(fileToUpload) == null) {
                     return;
                 }
                 refreshView();
@@ -134,7 +134,7 @@ public class MainFrame extends JFrame  {
                 if (StringUtils.equals(oldFileName,newFileName)) {
                     return;
                 }
-               SharedFile renamedFile = sharedFolderService.rename(oldFileName, newFileName);
+               FileDto renamedFile = fileService.rename(oldFileName, newFileName);
                if (renamedFile == null) {
                    return;
                }
@@ -184,7 +184,7 @@ public class MainFrame extends JFrame  {
             @Override
             public void mouseReleased(MouseEvent e) {
                 String fileName = (String) fileTable.getModel().getValueAt( fileTable.getSelectedRow(),0);
-                if (!sharedFolderService.deleteByName(fileName)) {
+                if (!fileService.deleteByName(fileName)) {
                     return;
                 }
                 printSuccess(String.format("file %s was deleted",fileName));
@@ -223,7 +223,7 @@ public class MainFrame extends JFrame  {
                     // set the label to the path of the selected file
                     String path = selectedFile.getAbsolutePath();
                     try {
-                        if (sharedFolderService.download(fileNameToDownload, path) == null) {
+                        if (fileService.download(fileNameToDownload, path) == null) {
                             return;
                         }
                         printSuccess("file " + fileTable.getModel().getValueAt(fileTable.getSelectedRow(), 0)
@@ -242,7 +242,7 @@ public class MainFrame extends JFrame  {
         shows it in the main frame
     * */
     private void refreshView() {
-        List<SharedFile> fileList = sharedFolderService.list();
+        List<FileDto> fileList = fileService.list();
         fileModel.setRowCount(0);
         if (CollectionUtils.isEmpty(fileList)) {
             return;

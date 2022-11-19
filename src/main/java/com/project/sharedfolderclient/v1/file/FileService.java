@@ -1,13 +1,10 @@
-package com.project.sharedfolderclient.v1.sharedfolder;
+package com.project.sharedfolderclient.v1.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.project.sharedfolderclient.v1.exception.ApplicationErrorEvents;
 import com.project.sharedfolderclient.v1.server.ServerUtil;
-import com.project.sharedfolderclient.v1.sharedfile.ContentFile;
-import com.project.sharedfolderclient.v1.sharedfile.SharedFile;
-import com.project.sharedfolderclient.v1.sharedfile.exception.*;
+import com.project.sharedfolderclient.v1.file.exception.*;
 import com.project.sharedfolderclient.v1.utils.FileUtils;
-import com.project.sharedfolderclient.v1.utils.http.context.Context;
 import com.project.sharedfolderclient.v1.utils.http.context.ContextEnabled;
 import com.project.sharedfolderclient.v1.utils.http.response.Response;
 import com.project.sharedfolderclient.v1.utils.http.RestUtils;
@@ -24,15 +21,19 @@ import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * File service for File operations
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SharedFolderService {
+public class FileService {
+
+    // map file name to file id
     private static Map<String, UUID> fileNamesToIdMap = new HashMap<>();
     private final ApplicationEventPublisher eventBus;
     private final ServerUtil serverUtils;
 
-    private final Context context;
 
     /**
      * retrieve list of files
@@ -41,17 +42,17 @@ public class SharedFolderService {
      * On Exception - application event will be sent
      */
     @ContextEnabled
-    public List<SharedFile> list() {
+    public List<FileDto> list() {
         log.debug("");
         try {
             HttpRequest request = RestUtils.createGetRequest(serverUtils.getApiPath());
             HttpResponse<String> restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<List<SharedFile>> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<List<FileDto>> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
             });
-            List<SharedFile> files = responseBody.getData();
+            List<FileDto> files = responseBody.getData();
             log.debug("Received {} files", files.size());
-            fileNamesToIdMap = files.stream().collect(Collectors.toMap(SharedFile::getName, SharedFile::getId));
+            fileNamesToIdMap = files.stream().collect(Collectors.toMap(FileDto::getName, FileDto::getId));
             return files;
         } catch (Exception e) {
             log.error("Could not retrieve the file list: {}", e.getMessage());
@@ -69,16 +70,16 @@ public class SharedFolderService {
      * On Exception - application event will be sent
      */
     @ContextEnabled
-    public SharedFile download(String fileName, String downloadPath) {
+    public FileDto download(String fileName, String downloadPath) {
         log.debug("Downloading {} to {}", fileName, downloadPath);
         try {
             String requestUrl = serverUtils.getApiPath() + convertNameToId(fileName)
                     .orElseThrow(()-> new FileNotExistsError(fileName));
             HttpResponse<String> restResponse = serverUtils.exchange(RestUtils.createGetRequest(requestUrl));
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<ContentFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<ContentFileDto> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
             });
-            ContentFile downloadedFile = responseBody.getData();
+            ContentFileDto downloadedFile = responseBody.getData();
             byte[] fileAsBytes = downloadedFile.getContent();
             log.debug("Saving file {} ", downloadedFile.getName());
             File file = FileUtils.createFile(String.format("%s/%s",downloadPath, fileName));
@@ -100,7 +101,7 @@ public class SharedFolderService {
      * On Exception - application event will be sent
      */
     @ContextEnabled
-    public SharedFile upload(File fileToUpload) {
+    public FileDto upload(File fileToUpload) {
         try {
             log.debug("Uploading file: {}", fileToUpload);
             if (fileToUpload == null) {
@@ -113,13 +114,13 @@ public class SharedFolderService {
                 throw new FileNotExistsError(filename);
             }
             byte[] data = FileCopyUtils.copyToByteArray(fileToUpload);
-            SharedFile file = new ContentFile()
+            FileDto file = new ContentFileDto()
                     .setContent(data)
                     .setName(filename);
             HttpRequest request = RestUtils.creatPostRequest(serverUtils.getApiPath(), file);
             HttpResponse<String> restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<FileDto> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
             });
             log.info(String.format("File %s was successfully uploaded",filename));
             return responseBody.getData();
@@ -139,18 +140,18 @@ public class SharedFolderService {
      * On Exception - application event will be sent
      */
     @ContextEnabled
-    public SharedFile rename(String currentFileName, String newFileName) {
+    public FileDto rename(String currentFileName, String newFileName) {
         log.debug("Renaming file name from [{}] to [{}]", currentFileName, newFileName);
         try {
             UUID fileId = convertNameToId(currentFileName)
                     .orElseThrow(() -> new FileNotExistsError(currentFileName));
-            SharedFile updatedFile = new SharedFile()
+            FileDto updatedFile = new FileDto()
                     .setId(fileId)
                     .setName(newFileName);
             HttpRequest request = RestUtils.createPutRequest(serverUtils.getApiPath() + fileId, updatedFile);
             HttpResponse<String> restResponse = serverUtils.exchange(request);
             serverUtils.assertSuccessfulResponse(restResponse);
-            Response<SharedFile> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
+            Response<FileDto> responseBody = JSON.objectMapper.readValue(restResponse.body(), new TypeReference<>() {
             });
             return responseBody.getData();
         } catch (Exception e) {

@@ -1,4 +1,4 @@
-package com.project.sharedfolderclient.v1.sharedfile.exception;
+package com.project.sharedfolderclient.v1.file.exception;
 
 import com.project.sharedfolderclient.v1.exception.BaseError;
 

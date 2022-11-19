@@ -27,7 +27,7 @@ public class Context {
 
     /**
      * Get current request id in context
-     * @return the request id , null of not exists in context
+     * @return the request id if exist in context, empty string otherwise
      */
     public String getRequestId() {
        return Optional.ofNullable(MDC.get(REQUEST_ID)).orElse(StringUtils.EMPTY);

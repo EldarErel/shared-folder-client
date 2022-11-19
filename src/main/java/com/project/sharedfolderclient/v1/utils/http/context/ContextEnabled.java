@@ -7,5 +7,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+/**
+ * Annotation to mark methods, so we can inject id to context
+ */
 public @interface ContextEnabled {
 }

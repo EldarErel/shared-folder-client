@@ -17,7 +17,7 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @Component
 @RequiredArgsConstructor
 /**
- * Wrap @ContextEnabled annotated method with context id
+ * Wrap @ContextEnabled annotated method with a unique id
  */
 @Aspect
 public class ContextWrapper {

@@ -1,8 +1,9 @@
 app:
-  server:
-    url: ${SHARED_FOLDER_URL:http://localhost:8080}
-    apiPath: ${FILE_API:/1.0/files/}
+  server: # Server configuration
+    url: ${SHARED_FOLDER_URL:http://localhost:8080} # Server url
+    apiPath: ${FILE_API:/1.0/files/} # server shared files api
 
+# logging configuration
 logging:
   level:
     root: error

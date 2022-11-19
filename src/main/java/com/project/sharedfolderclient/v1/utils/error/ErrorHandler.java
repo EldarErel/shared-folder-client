@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * Listener for error events
+ */
 public class ErrorHandler {
     private final MainFrame mainFrame;
 

@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 /**
- * Response object
+ * Describes a Response object from the shared folder server
  */
 public class Response<T> {
 

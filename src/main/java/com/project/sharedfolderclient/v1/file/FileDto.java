@@ -1,4 +1,4 @@
-package com.project.sharedfolderclient.v1.sharedfile;
+package com.project.sharedfolderclient.v1.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
@@ -9,12 +9,15 @@ import lombok.experimental.Accessors;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ *  Represent file in the shared folder
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Accessors(chain = true)
-public class SharedFile {
+public class FileDto {
     private UUID id;
     private String name;
     private String size;

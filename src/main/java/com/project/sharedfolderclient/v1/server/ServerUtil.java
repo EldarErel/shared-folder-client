@@ -26,6 +26,10 @@ import static com.project.sharedfolderclient.v1.exception.ErrorMessages.*;
 import static com.project.sharedfolderclient.v1.utils.http.context.Context.REQUEST_ID_HEADER;
 import static java.util.stream.Collectors.joining;
 
+
+/**
+ * Util to communicate with the Shared folder server
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -39,11 +43,19 @@ public class ServerUtil {
         return client.send(modifiedHttpRequest, HttpResponse.BodyHandlers.ofString());
     }
 
-
+    /**
+     *  Get server full path
+     * @return - the server full path
+     */
     public String getApiPath() {
         return appProperties.getServer().getUrl() + appProperties.getServer().getApiPath();
     }
 
+    /**
+     * Validate response from the server
+     * @param response - the response object
+     * @throws JsonProcessingException - if cannot deserialize the response object
+     */
     public void assertSuccessfulResponse(HttpResponse<String> response) throws JsonProcessingException {
         if (response == null) {
             log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
@@ -54,7 +66,7 @@ public class ServerUtil {
             handleErrors(response);
             return;
         }
-        if (response.statusCode() == 204) {
+        if (response.statusCode() == Constants.NO_CONTENT_HTTP_STATUS) {
             // success with no content
             return;
         }
@@ -68,6 +80,10 @@ public class ServerUtil {
 
     }
 
+    /**
+     * Handle errors comes from the server
+     * @param response - the response with errors
+     */
     private void handleErrors(HttpResponse<String> response) throws JsonProcessingException {
         if (response.body() == null) {
             log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
@@ -78,6 +94,11 @@ public class ServerUtil {
         handleErrors(body);
 
     }
+
+    /**
+     * Handle errors in a response object
+     * @param body - response object body
+     */
     private void handleErrors(Response body) {
         List<Error> errorList = body.getErrors();
         if (!CollectionUtils.isEmpty(errorList)) {
@@ -90,6 +111,11 @@ public class ServerUtil {
 
     }
 
+    /**
+     * Adds X-Request-Id header for the http request
+     * @param request - http request
+     * @return - same http request with extra request id header
+     */
     private HttpRequest addContextToRequest(HttpRequest request) {
         HttpRequest.Builder builder =   HttpRequest.newBuilder(request.uri())
                 .method(request.method(), request.bodyPublisher().orElse(HttpRequest.BodyPublishers.ofString(StringUtils.EMPTY)));
