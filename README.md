@@ -7,14 +7,14 @@ java based application (swing with spring boot)
 
 ## Pre Installation
 Make sure you have JAVA 11 installed <br>
-run in termail ```java -version```
-to vlidate your java version 
+run in terminal ```java -version```
+to validate your java version 
 
 ## Running
 run ```java -jar shared-folder-client.jar``` from command line
 
 
-## Environment Variable
+## Environment Variables
 | Name                     | Description                                     | Default value                           |
 | :---:                    | :---:                                           | :---:                                   |
 | `LOG_LEVEL`              | Log level                                       | `INFO`                                  |
