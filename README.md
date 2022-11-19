@@ -1,4 +1,6 @@
-# Shared Folder Client
+# Shared Folder - University project
+
+## Shared Folder Client
 Client to connect to the shared folder server <br>
 java based application (swing with spring boot)
 
