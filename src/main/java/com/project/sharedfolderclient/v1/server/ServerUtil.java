@@ -44,7 +44,7 @@ public class ServerUtil {
         try {
             return client.send(modifiedHttpRequest, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
-            log.warn("Could not complete the request: {}", e.getMessage());
+            log.debug("Could not complete the request: {}", e.getMessage());
         }
         return null;
     }
@@ -65,7 +65,7 @@ public class ServerUtil {
     @SneakyThrows
     public void assertSuccessfulResponse(HttpResponse<String> response) {
         if (response == null) {
-            log.error(SERVER_UNREACHABLE_ERROR_MESSAGE);
+            log.debug(SERVER_UNREACHABLE_ERROR_MESSAGE);
             throw new ServerConnectionError();
         }
         if (!Constants.successCodeRange.contains(response.statusCode())) {
@@ -78,7 +78,7 @@ public class ServerUtil {
             return;
         }
         if (response.body() == null) {
-            log.error(NULL_RESPONSE_BODY_ERROR_MESSAGE);
+            log.debug(NULL_RESPONSE_BODY_ERROR_MESSAGE);
             throw new ServerConnectionError(NULL_RESPONSE_BODY_ERROR_MESSAGE);
         }
         Response body = JSON.objectMapper.readValue(response.body(), new TypeReference<>() {
